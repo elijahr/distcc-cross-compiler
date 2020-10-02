@@ -52,7 +52,7 @@ main () {
   do
     ./scripts/run-tests-debian.sh \
       debian-buster \
-      amd64 \
+      $host_arch \
       debian-buster \
       $client_arch
   done
