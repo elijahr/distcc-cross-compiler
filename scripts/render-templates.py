@@ -9,9 +9,25 @@ import re
 
 # Debian
 debian_host_distros = ( 'debian:buster', )
-debian_host_archs = ( 'amd64', )
+debian_host_archs = ( 'amd64', 'i386', 'arm32v7', 'arm64v8', 'ppc64le', 's390x' )
 debian_client_distros = ( 'debian:buster', )
 debian_client_archs = ( 'amd64', 'i386', 'arm32v7', 'arm64v8', 'ppc64le', 's390x' )
+debian_compilers_by_host_arch = {
+  'amd64': ( 'amd64', 'i386', 'arm32v7', 'arm64v8', 'ppc64le', 's390x' ),
+  'i386': ( 'amd64', 'i386', 'arm64v8', 'ppc64le' ),
+  'arm32v7': ( 'arm32v7', ),
+  'arm64v8': ( 'amd64', 'i386', 'arm64v8', 'ppc64le' ),
+  'ppc64le': ( 'amd64', 'i386', 'arm64v8', 'ppc64le' ),
+  's390x': ( 's390x', ),
+}
+debian_packages_by_arch = {
+  'amd64': 'gcc-x86_64-linux-gnu g++-x86_64-linux-gnu binutils-x86_64-linux-gnu',
+  'i386': 'gcc-i686-linux-gnu g++-i686-linux-gnu binutils-i686-linux-gnu',
+  'arm32v7': 'gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf binutils-arm-linux-gnueabihf',
+  'arm64v8': 'gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu',
+  'ppc64le': 'gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu binutils-powerpc64le-linux-gnu',
+  's390x': 'gcc-s390x-linux-gnu g++-s390x-linux-gnu binutils-s390x-linux-gnu',
+}
 debian_ports_by_arch = {
   'i386': 3603,
   'amd64': 3604,
@@ -63,10 +79,17 @@ archlinux_toolchains_by_arch = {
 }
 
 
-def get_debian_compiler_path_part_by_arch(arch):
-  if arch == 'amd64':
+def get_debian_packages_by_host_arch(host_arch):
+  packages = 'build-essential g++ distcc'
+  for pkgs in debian_packages_by_arch[host_arch]:
+    packages += ' ' + pkgs
+  return packages
+
+
+def get_debian_compiler_path_part_by_arch(host_arch, compiler_arch):
+  if host_arch == compiler_arch:
     return ''
-  return '/usr/local/'+debian_toolchains_by_arch[arch]+'/bin:'
+  return '/usr/local/'+debian_toolchains_by_arch[compiler_arch]+'/bin:'
 
 
 def get_archlinux_compiler_path_part_by_arch(arch):
@@ -97,6 +120,8 @@ def generate_host_dockerfiles():
   for host_arch in debian_host_archs:
     for host_distro in debian_host_distros:
       host_distro_slug = slugify(host_distro)
+      packages = get_debian_packages_by_host_arch(host_arch)
+
       render(
         'Dockerfile.distcc-cross-compiler-host-debian.template',
         'Dockerfile.distcc-cross-compiler-host-{host_distro_slug}.{host_arch}',
@@ -160,27 +185,28 @@ def generate_docker_compose():
 
 
 def generate_distccd_config():
-  for client_arch in debian_client_archs:
-    flag = debian_flags_by_arch[client_arch]
-    toolchain = debian_toolchains_by_arch[client_arch]
-    host_port = debian_ports_by_arch[client_arch]
-    compiler_path_part = get_debian_compiler_path_part_by_arch(client_arch)
+  for host_arch in debian_host_archs:
+    for client_arch in debian_compilers_by_host_arch[host_arch]:
+      flag = debian_flags_by_arch[client_arch]
+      toolchain = debian_toolchains_by_arch[client_arch]
+      host_port = debian_ports_by_arch[client_arch]
+      compiler_path_part = get_debian_compiler_path_part_by_arch(host_arch, client_arch)
 
-    render(
-      'distcc-cross-compiler-host-debian/etc/default/distccd-template',
-      'distcc-cross-compiler-host-debian/etc/default/distccd-{toolchain}',
-      locals(),
-    )
-    render(
-      'distcc-cross-compiler-host-debian/etc/init.d/distccd-template',
-      'distcc-cross-compiler-host-debian/etc/init.d/distccd-{toolchain}',
-      locals(),
-    )
-    render(
-      'distcc-cross-compiler-host-debian/etc/logrotate.d/distccd-template',
-      'distcc-cross-compiler-host-debian/etc/logrotate.d/distccd-{toolchain}',
-      locals(),
-    )
+      render(
+        'distcc-cross-compiler-host-debian/etc/default/distccd-template',
+        'distcc-cross-compiler-host-debian/{host_arch}/etc/default/distccd-{toolchain}',
+        locals(),
+      )
+      render(
+        'distcc-cross-compiler-host-debian/etc/init.d/distccd-template',
+        'distcc-cross-compiler-host-debian/{host_arch}/etc/init.d/distccd-{toolchain}',
+        locals(),
+      )
+      render(
+        'distcc-cross-compiler-host-debian/etc/logrotate.d/distccd-template',
+        'distcc-cross-compiler-host-debian/{host_arch}/etc/logrotate.d/distccd-{toolchain}',
+        locals(),
+      )
 
   for client_arch in archlinux_client_archs:
     host_port = archlinux_ports_by_arch[client_arch]
