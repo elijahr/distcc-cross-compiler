@@ -5,8 +5,10 @@
 # first in PATH (the etc/init.d/distccd-* scripts do this).
 
 set -uxeo pipefail
+shopt -s nullglob
 
 targets=(
+  "x86_64-linux-gnu" \
   "i686-linux-gnu" \
   "arm-linux-gnueabihf" \
   "aarch64-linux-gnu" \
@@ -17,7 +19,8 @@ targets=(
 for target in ${targets[@]}
 do
   mkdir -p /usr/local/${target}/bin
-  for file in "/usr/bin/${target}-"*
+  files=("/usr/bin/${target}-"*)
+  for file in ${files:-}
   do
     link=/usr/local/${target}/bin/$(basename $file | sed "s/${target}-//")
     if [[ ! -f $link ]]
@@ -27,13 +30,15 @@ do
   done
 
   # distcc provides gcc and g++ wrappers, but not cc, so create an additional symlink
-  link=/usr/local/${target}/bin/cc
-  if [[ ! -f $link ]]
+  if [[ -f /usr/local/${target}/bin/cc ]]
   then
-    ln -s /usr/bin/${target}-gcc $link
-  fi
+    link=/usr/local/${target}/bin/cc
+    if [[ ! -f $link ]]
+    then
+      ln -s /usr/bin/${target}-gcc $link
+    fi
 
-  update-rc.d distccd-${target} defaults
+    update-rc.d distccd-${target} defaults
+  fi
 done
 
-update-rc.d distccd-x86_64-linux-gnu defaults

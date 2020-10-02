@@ -1,4 +1,4 @@
-name: Build images
+name: Build Arch Linux images
 
 on:
   push:

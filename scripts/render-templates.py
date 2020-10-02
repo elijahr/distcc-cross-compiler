@@ -21,7 +21,7 @@ debian_compilers_by_host_arch = {
   's390x': ( 's390x', ),
 }
 debian_packages_by_arch = {
-  'amd64': 'gcc-x86_64-linux-gnu g++-x86_64-linux-gnu binutils-x86_64-linux-gnu',
+  'amd64': 'gcc-x86-64-linux-gnu g++-x86-64-linux-gnu binutils-x86-64-linux-gnu',
   'i386': 'gcc-i686-linux-gnu g++-i686-linux-gnu binutils-i686-linux-gnu',
   'arm32v7': 'gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf binutils-arm-linux-gnueabihf',
   'arm64v8': 'gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu',
@@ -81,8 +81,8 @@ archlinux_toolchains_by_arch = {
 
 def get_debian_packages_by_host_arch(host_arch):
   packages = 'build-essential g++ distcc'
-  for pkgs in debian_packages_by_arch[host_arch]:
-    packages += ' ' + pkgs
+  for compiler_arch in debian_compilers_by_host_arch[host_arch]:
+    packages += ' ' + debian_packages_by_arch[compiler_arch]
   return packages
 
 

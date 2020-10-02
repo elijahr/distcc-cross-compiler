@@ -7,8 +7,8 @@ cd $(dirname $0)/..
 debian_client_archs=( amd64 i386 arm32v7 arm64v8 ppc64le s390x )
 
 build_debian_host_image () {
-  latest_tag=elijahru/distcc-cross-compiler-host-debian-buster:latest-amd64
-  dockerfile=rendered/Dockerfile.distcc-cross-compiler-host-debian-buster.amd64
+  latest_tag=elijahru/distcc-cross-compiler-host-debian-buster:latest-${host_arch}
+  dockerfile=rendered/Dockerfile.distcc-cross-compiler-host-debian-buster.${host_arch}
   docker pull $latest_tag || true
   docker build . \
     --file $dockerfile \
@@ -17,8 +17,8 @@ build_debian_host_image () {
 }
 
 build_debian_client_image () {
-  latest_tag=elijahru/distcc-cross-compiler-client-debian-buster:latest-$1
-  dockerfile=rendered/Dockerfile.distcc-cross-compiler-client-debian-buster.$1
+  latest_tag=elijahru/distcc-cross-compiler-client-debian-buster:latest-${client_arch}
+  dockerfile=rendered/Dockerfile.distcc-cross-compiler-client-debian-buster.${client_arch}
   docker pull $latest_tag || true
   docker build . \
     --file $dockerfile \
@@ -26,7 +26,20 @@ build_debian_client_image () {
     --cache-from=$latest_tag
 }
 
+usage () {
+  echo "Usage:"
+  echo "$0 HOST_ARCH CLIENT_ARCH"
+}
+
+
 main () {
+
+  if [[ -z "$host_arch" || -z "$client_arch" ]]
+  then
+    usage
+    exit 1
+  fi
+
   ./scripts/render-templates.py
   build_debian_host_image
 
@@ -45,4 +58,6 @@ main () {
   done
 }
 
+host_arch=${1:-}
+client_arch=${2:-}
 main
