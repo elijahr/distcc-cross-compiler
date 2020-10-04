@@ -1,4 +1,4 @@
-FROM {client_arch}/{client_distro}
+FROM {client_arch}/{distro}
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -7,15 +7,15 @@ RUN apt-get update && \
     build-essential g++ distcc ccache && \
   apt-get clean
 
-WORKDIR /root
+COPY scripts/setup.sh /scripts/
 
-COPY ./scripts/distcc-cross-compiler-client-debian/setup.sh setup.sh
+WORKDIR /scripts
 RUN ./setup.sh
 
 # Use ccache wrappers first, distcc wrappers second
 ENV PATH=/usr/lib/ccache:/usr/lib/distcc:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-# If distccd can't be reached, fail
+# If set to 0, compilation will fail when distccd can't be reached
 ENV DISTCC_FALLBACK=0
 
 # Connect to distccd on default docker network

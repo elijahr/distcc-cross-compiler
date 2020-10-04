@@ -7,19 +7,37 @@ on:
 
 jobs:
   build:
-    name: Build debian-buster ${{ matrix.arch }}
+    name: Build debian-buster ${{ matrix.client_arch }}
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
         include:
-          - arch: amd64
+          # amd64 hosts
+          - host_arch: amd64
+            client_arch: amd64
             host_releaser: true
-          - arch: i386
-          - arch: arm32v7
-          - arch: arm64v8
-          - arch: ppc64le
-          - arch: s390x
+          - host_arch: amd64
+            client_arch: i386
+          - host_arch: amd64
+            client_arch: arm32v7
+          - host_arch: amd64
+            client_arch: arm64v8
+          - host_arch: amd64
+            client_arch: ppc64le
+          - host_arch: amd64
+            client_arch: s390x
+
+          # i386 hosts
+          - host_arch: i386
+            client_arch: amd64
+            host_releaser: true
+          - host_arch: i386
+            client_arch: i386
+          - host_arch: i386
+            client_arch: arm64v8
+          - host_arch: i386
+            client_arch: ppc64le
 
     steps:
       - name: Checkout repo
@@ -40,7 +58,7 @@ jobs:
       - name: Build host image
         run: |
           latest_tag=elijahru/distcc-cross-compiler-host-debian-buster:latest-amd64
-          dockerfile=rendered/Dockerfile.distcc-cross-compiler-host-debian-buster.amd64
+          dockerfile=rendered/Dockerfile.debian-buster.host.amd64
           docker pull $latest_tag || true
           docker build . \
             --file $dockerfile \
@@ -49,8 +67,8 @@ jobs:
 
       - name: Build client image
         run: |
-          latest_tag=elijahru/distcc-cross-compiler-client-debian-buster:latest-${{ matrix.arch }}
-          dockerfile=rendered/Dockerfile.distcc-cross-compiler-client-debian-buster.${{ matrix.arch }}
+          latest_tag=elijahru/distcc-cross-compiler-client-debian-buster:latest-${{ matrix.client_arch }}
+          dockerfile=rendered/Dockerfile.debian-buster.client.${{ matrix.client_arch }}
 
           docker pull $latest_tag || true
           docker build . \
@@ -64,12 +82,12 @@ jobs:
             debian-buster \
             amd64 \
             debian-buster \
-            ${{ matrix.arch }}
+            ${{ matrix.client_arch }}
 
       - name: Tag host release image
         if: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/') && matrix.host_releaser }}
         run: |
-          version=$(basename ${{ github.ref}})
+          version=$(basename ${{ github.ref }})
           latest_tag=elijahru/distcc-cross-compiler-host-debian-buster:latest-amd64
           version_tag=elijahru/distcc-cross-compiler-host-debian-buster:${version}-amd64
 
@@ -85,8 +103,8 @@ jobs:
         if: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/') }}
         run: |
           version=$(basename ${{ github.ref}})
-          latest_tag=elijahru/distcc-cross-compiler-client-debian-buster:latest-${{ matrix.arch }}
-          version_tag=elijahru/distcc-cross-compiler-client-debian-buster:${version}-${{ matrix.arch }}
+          latest_tag=elijahru/distcc-cross-compiler-client-debian-buster:latest-${{ matrix.client_arch }}
+          version_tag=elijahru/distcc-cross-compiler-client-debian-buster:${version}-${{ matrix.client_arch }}
 
           echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login \
             -u elijahru --password-stdin

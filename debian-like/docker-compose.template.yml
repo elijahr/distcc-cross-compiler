@@ -1,7 +1,7 @@
 version: '3'
 services:
   distcc-cross-compiler-host:
-    image: elijahru/distcc-cross-compiler-host-{host_distro_slug}:latest-{host_arch}
+    image: elijahru/distcc-cross-compiler-host-{distro_slug}:latest-{host_arch}
     ports:
       # i386
       - 3603:3603
@@ -17,7 +17,7 @@ services:
       - 3610:3610
 
   distcc-cross-compiler-client:
-    image: elijahru/distcc-cross-compiler-client-{client_distro_slug}:latest-{client_arch}
+    image: elijahru/distcc-cross-compiler-client-{distro_slug}:latest-{client_arch}
     volumes:
       - ..:/code
-    command: /code/scripts/build-cjson.sh
+    command: /code/build-cjson.sh

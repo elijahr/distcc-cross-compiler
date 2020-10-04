@@ -16,7 +16,7 @@ main () {
   # Compile cJSON, will make two requests to distcc-cross-compiler-host
   rm -Rf /tmp/cJSON
   mkdir /tmp/cJSON
-  tar xzf test-data/cJSON-master.tar.gz -C /tmp/cJSON
+  tar xzf cJSON-master.tar.gz -C /tmp/cJSON
   cd /tmp/cJSON/cJSON-master
 
   for i in $(seq 1 4)

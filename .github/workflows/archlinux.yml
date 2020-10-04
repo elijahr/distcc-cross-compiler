@@ -39,7 +39,7 @@ jobs:
       - name: Build host image
         run: |
           latest_tag=elijahru/distcc-cross-compiler-host-archlinux:latest-amd64
-          dockerfile=rendered/Dockerfile.distcc-cross-compiler-host-archlinux.amd64
+          dockerfile=rendered/Dockerfile.archlinux.host.amd64
           docker pull $latest_tag || true
           docker build . \
             --file $dockerfile \
@@ -49,7 +49,7 @@ jobs:
       - name: Build client image
         run: |
           latest_tag=elijahru/distcc-cross-compiler-client-archlinux:latest-${{ matrix.arch }}
-          dockerfile=rendered/Dockerfile.distcc-cross-compiler-client-archlinux.${{ matrix.arch }}
+          dockerfile=rendered/Dockerfile.archlinux.client.${{ matrix.arch }}
 
           docker pull $latest_tag || true
           docker build . \

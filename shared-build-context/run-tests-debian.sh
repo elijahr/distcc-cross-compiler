@@ -12,9 +12,6 @@ docker_compose=rendered/docker-compose.host-${host_distro}-${host_arch}.client-$
 run_distcc_client_tests () {
   # Compile test project in the client container
 
-  # Clear logs
-  image_id=$(docker images elijahru/distcc-cross-compiler-host-${host_distro}:latest-${host_arch} --format "{{.ID}}")
-
   docker-compose \
     -f $docker_compose \
     up -d \

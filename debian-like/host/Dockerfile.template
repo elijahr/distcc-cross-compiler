@@ -1,0 +1,21 @@
+FROM {host_arch}/{distro}
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update; \
+  apt-get install -y \
+    {packages}; \
+  apt-get clean
+
+COPY etc/default/distccd.host-{host_arch}.* /etc/default/
+COPY etc/init.d/distccd.host-{host_arch}.* /etc/init.d/
+COPY etc/logrotate.d/distccd.host-{host_arch}.* /etc/logrotate.d/
+
+COPY scripts/* /scripts/
+
+WORKDIR /scripts
+RUN \
+  chmod +x /etc/init.d/distccd.* && \
+  ./setup.sh
+
+CMD ./run.sh
