@@ -8,9 +8,9 @@ on:
     tags: ['*']
 
 jobs:
-  build-amd64-host:
+  build-host-amd64:
     name: |
-      host amd64
+      host: amd64
     runs-on: ubuntu-latest
 
     steps:
@@ -37,33 +37,157 @@ jobs:
           --host-arch amd64 \
           --tag $(basename ${{ github.event.ref }})
 
-  build-amd64-clients:
+  build-host-i386:
     name: |
-      client ${{ matrix.compiler_arch }}
+      host: i386
     runs-on: ubuntu-latest
-    needs: build-amd64-host
 
-    strategy:
-      matrix:
-        include:
-        - host_arch: amd64
-          compiler_arch: amd64
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
 
-        - host_arch: amd64
-          compiler_arch: i386
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
-        - host_arch: amd64
-          compiler_arch: arm32v7
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
 
-        - host_arch: amd64
-          compiler_arch: arm64v8
+    - name: Build host image
+      run: |
+        ./builder.py build-host \
+          --distro debian:buster \
+          --host-arch i386 \
+          --tag $(basename ${{ github.event.ref }})
 
-        - host_arch: amd64
-          compiler_arch: ppc64le
+  build-host-arm32v7:
+    name: |
+      host: arm32v7
+    runs-on: ubuntu-latest
 
-        - host_arch: amd64
-          compiler_arch: s390x
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
 
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
+
+    - name: Build host image
+      run: |
+        ./builder.py build-host \
+          --distro debian:buster \
+          --host-arch arm32v7 \
+          --tag $(basename ${{ github.event.ref }})
+
+  build-host-arm64v8:
+    name: |
+      host: arm64v8
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
+
+    - name: Build host image
+      run: |
+        ./builder.py build-host \
+          --distro debian:buster \
+          --host-arch arm64v8 \
+          --tag $(basename ${{ github.event.ref }})
+
+  build-host-ppc64le:
+    name: |
+      host: ppc64le
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
+
+    - name: Build host image
+      run: |
+        ./builder.py build-host \
+          --distro debian:buster \
+          --host-arch ppc64le \
+          --tag $(basename ${{ github.event.ref }})
+
+  build-host-s390x:
+    name: |
+      host: s390x
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
+
+    - name: Build host image
+      run: |
+        ./builder.py build-host \
+          --distro debian:buster \
+          --host-arch s390x \
+          --tag $(basename ${{ github.event.ref }})
+
+
+
+  build-client-amd64:
+    name: |
+      client: amd64
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repo
@@ -86,22 +210,197 @@ jobs:
       run: |
         ./builder.py build-client \
           --distro debian:buster \
-          --client-arch ${{ matrix.compiler_arch }} \
+          --client-arch amd64 \
           --tag $(basename ${{ github.event.ref }})
+
+  build-client-i386:
+    name: |
+      client: i386
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
+
+    - name: Build client image
+      run: |
+        ./builder.py build-client \
+          --distro debian:buster \
+          --client-arch i386 \
+          --tag $(basename ${{ github.event.ref }})
+
+  build-client-arm32v7:
+    name: |
+      client: arm32v7
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
+
+    - name: Build client image
+      run: |
+        ./builder.py build-client \
+          --distro debian:buster \
+          --client-arch arm32v7 \
+          --tag $(basename ${{ github.event.ref }})
+
+  build-client-arm64v8:
+    name: |
+      client: arm64v8
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
+
+    - name: Build client image
+      run: |
+        ./builder.py build-client \
+          --distro debian:buster \
+          --client-arch arm64v8 \
+          --tag $(basename ${{ github.event.ref }})
+
+  build-client-ppc64le:
+    name: |
+      client: ppc64le
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
+
+    - name: Build client image
+      run: |
+        ./builder.py build-client \
+          --distro debian:buster \
+          --client-arch ppc64le \
+          --tag $(basename ${{ github.event.ref }})
+
+  build-client-s390x:
+    name: |
+      client: s390x
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
+
+    - name: Build client image
+      run: |
+        ./builder.py build-client \
+          --distro debian:buster \
+          --client-arch s390x \
+          --tag $(basename ${{ github.event.ref }})
+
+
+
+
+  run-tests-amd64-amd64:
+    name: |
+      test (host: amd64, client: amd64)
+    runs-on: ubuntu-latest
+    needs:
+    - build-host-amd64
+    - build-client-amd64
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
 
     - name: Run tests
       run: |
         ./builder.py test \
           --distro debian:buster \
           --host-arch amd64 \
-          --client-arch ${{ matrix.compiler_arch }} \
+          --client-arch amd64 \
           --tag $(basename ${{ github.event.ref }})
 
-
-  build-i386-host:
+  run-tests-amd64-i386:
     name: |
-      host i386
+      test (host: amd64, client: i386)
     runs-on: ubuntu-latest
+    needs:
+    - build-host-amd64
+    - build-client-i386
 
     steps:
     - name: Checkout repo
@@ -120,34 +419,21 @@ jobs:
       run: |
         pip3 install -r requirements.txt
 
-    - name: Build host image
+    - name: Run tests
       run: |
-        ./builder.py build-host \
+        ./builder.py test \
           --distro debian:buster \
-          --host-arch i386 \
+          --host-arch amd64 \
+          --client-arch i386 \
           --tag $(basename ${{ github.event.ref }})
 
-  build-i386-clients:
+  run-tests-amd64-arm32v7:
     name: |
-      client ${{ matrix.compiler_arch }}
+      test (host: amd64, client: arm32v7)
     runs-on: ubuntu-latest
-    needs: build-i386-host
-
-    strategy:
-      matrix:
-        include:
-        - host_arch: i386
-          compiler_arch: amd64
-
-        - host_arch: i386
-          compiler_arch: i386
-
-        - host_arch: i386
-          compiler_arch: arm64v8
-
-        - host_arch: i386
-          compiler_arch: ppc64le
-
+    needs:
+    - build-host-amd64
+    - build-client-arm32v7
 
     steps:
     - name: Checkout repo
@@ -166,26 +452,155 @@ jobs:
       run: |
         pip3 install -r requirements.txt
 
-    - name: Build client image
+    - name: Run tests
       run: |
-        ./builder.py build-client \
+        ./builder.py test \
           --distro debian:buster \
-          --client-arch ${{ matrix.compiler_arch }} \
+          --host-arch amd64 \
+          --client-arch arm32v7 \
           --tag $(basename ${{ github.event.ref }})
+
+  run-tests-amd64-arm64v8:
+    name: |
+      test (host: amd64, client: arm64v8)
+    runs-on: ubuntu-latest
+    needs:
+    - build-host-amd64
+    - build-client-arm64v8
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
+
+    - name: Run tests
+      run: |
+        ./builder.py test \
+          --distro debian:buster \
+          --host-arch amd64 \
+          --client-arch arm64v8 \
+          --tag $(basename ${{ github.event.ref }})
+
+  run-tests-amd64-ppc64le:
+    name: |
+      test (host: amd64, client: ppc64le)
+    runs-on: ubuntu-latest
+    needs:
+    - build-host-amd64
+    - build-client-ppc64le
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
+
+    - name: Run tests
+      run: |
+        ./builder.py test \
+          --distro debian:buster \
+          --host-arch amd64 \
+          --client-arch ppc64le \
+          --tag $(basename ${{ github.event.ref }})
+
+  run-tests-amd64-s390x:
+    name: |
+      test (host: amd64, client: s390x)
+    runs-on: ubuntu-latest
+    needs:
+    - build-host-amd64
+    - build-client-s390x
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
+
+    - name: Run tests
+      run: |
+        ./builder.py test \
+          --distro debian:buster \
+          --host-arch amd64 \
+          --client-arch s390x \
+          --tag $(basename ${{ github.event.ref }})
+
+
+
+  run-tests-i386-amd64:
+    name: |
+      test (host: i386, client: amd64)
+    runs-on: ubuntu-latest
+    needs:
+    - build-host-i386
+    - build-client-amd64
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
 
     - name: Run tests
       run: |
         ./builder.py test \
           --distro debian:buster \
           --host-arch i386 \
-          --client-arch ${{ matrix.compiler_arch }} \
+          --client-arch amd64 \
           --tag $(basename ${{ github.event.ref }})
 
-
-  build-arm32v7-host:
+  run-tests-i386-i386:
     name: |
-      host arm32v7
+      test (host: i386, client: i386)
     runs-on: ubuntu-latest
+    needs:
+    - build-host-i386
+    - build-client-i386
 
     steps:
     - name: Checkout repo
@@ -204,25 +619,21 @@ jobs:
       run: |
         pip3 install -r requirements.txt
 
-    - name: Build host image
+    - name: Run tests
       run: |
-        ./builder.py build-host \
+        ./builder.py test \
           --distro debian:buster \
-          --host-arch arm32v7 \
+          --host-arch i386 \
+          --client-arch i386 \
           --tag $(basename ${{ github.event.ref }})
 
-  build-arm32v7-clients:
+  run-tests-i386-arm64v8:
     name: |
-      client ${{ matrix.compiler_arch }}
+      test (host: i386, client: arm64v8)
     runs-on: ubuntu-latest
-    needs: build-arm32v7-host
-
-    strategy:
-      matrix:
-        include:
-        - host_arch: arm32v7
-          compiler_arch: arm32v7
-
+    needs:
+    - build-host-i386
+    - build-client-arm64v8
 
     steps:
     - name: Checkout repo
@@ -241,26 +652,91 @@ jobs:
       run: |
         pip3 install -r requirements.txt
 
-    - name: Build client image
+    - name: Run tests
       run: |
-        ./builder.py build-client \
+        ./builder.py test \
           --distro debian:buster \
-          --client-arch ${{ matrix.compiler_arch }} \
+          --host-arch i386 \
+          --client-arch arm64v8 \
           --tag $(basename ${{ github.event.ref }})
+
+  run-tests-i386-ppc64le:
+    name: |
+      test (host: i386, client: ppc64le)
+    runs-on: ubuntu-latest
+    needs:
+    - build-host-i386
+    - build-client-ppc64le
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
+
+    - name: Run tests
+      run: |
+        ./builder.py test \
+          --distro debian:buster \
+          --host-arch i386 \
+          --client-arch ppc64le \
+          --tag $(basename ${{ github.event.ref }})
+
+
+
+  run-tests-arm32v7-arm32v7:
+    name: |
+      test (host: arm32v7, client: arm32v7)
+    runs-on: ubuntu-latest
+    needs:
+    - build-host-arm32v7
+    - build-client-arm32v7
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
 
     - name: Run tests
       run: |
         ./builder.py test \
           --distro debian:buster \
           --host-arch arm32v7 \
-          --client-arch ${{ matrix.compiler_arch }} \
+          --client-arch arm32v7 \
           --tag $(basename ${{ github.event.ref }})
 
 
-  build-arm64v8-host:
+
+  run-tests-arm64v8-amd64:
     name: |
-      host arm64v8
+      test (host: arm64v8, client: amd64)
     runs-on: ubuntu-latest
+    needs:
+    - build-host-arm64v8
+    - build-client-amd64
 
     steps:
     - name: Checkout repo
@@ -278,70 +754,22 @@ jobs:
     - name: Install pip requirements
       run: |
         pip3 install -r requirements.txt
-
-    - name: Build host image
-      run: |
-        ./builder.py build-host \
-          --distro debian:buster \
-          --host-arch arm64v8 \
-          --tag $(basename ${{ github.event.ref }})
-
-  build-arm64v8-clients:
-    name: |
-      client ${{ matrix.compiler_arch }}
-    runs-on: ubuntu-latest
-    needs: build-arm64v8-host
-
-    strategy:
-      matrix:
-        include:
-        - host_arch: arm64v8
-          compiler_arch: amd64
-
-        - host_arch: arm64v8
-          compiler_arch: i386
-
-        - host_arch: arm64v8
-          compiler_arch: arm64v8
-
-
-    steps:
-    - name: Checkout repo
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 1
-        submodules: recursive
-
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-
-    - name: Install pip requirements
-      run: |
-        pip3 install -r requirements.txt
-
-    - name: Build client image
-      run: |
-        ./builder.py build-client \
-          --distro debian:buster \
-          --client-arch ${{ matrix.compiler_arch }} \
-          --tag $(basename ${{ github.event.ref }})
 
     - name: Run tests
       run: |
         ./builder.py test \
           --distro debian:buster \
           --host-arch arm64v8 \
-          --client-arch ${{ matrix.compiler_arch }} \
+          --client-arch amd64 \
           --tag $(basename ${{ github.event.ref }})
 
-
-  build-ppc64le-host:
+  run-tests-arm64v8-i386:
     name: |
-      host ppc64le
+      test (host: arm64v8, client: i386)
     runs-on: ubuntu-latest
+    needs:
+    - build-host-arm64v8
+    - build-client-i386
 
     steps:
     - name: Checkout repo
@@ -360,34 +788,21 @@ jobs:
       run: |
         pip3 install -r requirements.txt
 
-    - name: Build host image
+    - name: Run tests
       run: |
-        ./builder.py build-host \
+        ./builder.py test \
           --distro debian:buster \
-          --host-arch ppc64le \
+          --host-arch arm64v8 \
+          --client-arch i386 \
           --tag $(basename ${{ github.event.ref }})
 
-  build-ppc64le-clients:
+  run-tests-arm64v8-arm64v8:
     name: |
-      client ${{ matrix.compiler_arch }}
+      test (host: arm64v8, client: arm64v8)
     runs-on: ubuntu-latest
-    needs: build-ppc64le-host
-
-    strategy:
-      matrix:
-        include:
-        - host_arch: ppc64le
-          compiler_arch: amd64
-
-        - host_arch: ppc64le
-          compiler_arch: i386
-
-        - host_arch: ppc64le
-          compiler_arch: arm64v8
-
-        - host_arch: ppc64le
-          compiler_arch: ppc64le
-
+    needs:
+    - build-host-arm64v8
+    - build-client-arm64v8
 
     steps:
     - name: Checkout repo
@@ -406,26 +821,56 @@ jobs:
       run: |
         pip3 install -r requirements.txt
 
-    - name: Build client image
+    - name: Run tests
       run: |
-        ./builder.py build-client \
+        ./builder.py test \
           --distro debian:buster \
-          --client-arch ${{ matrix.compiler_arch }} \
+          --host-arch arm64v8 \
+          --client-arch arm64v8 \
           --tag $(basename ${{ github.event.ref }})
+
+
+
+  run-tests-ppc64le-amd64:
+    name: |
+      test (host: ppc64le, client: amd64)
+    runs-on: ubuntu-latest
+    needs:
+    - build-host-ppc64le
+    - build-client-amd64
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
 
     - name: Run tests
       run: |
         ./builder.py test \
           --distro debian:buster \
           --host-arch ppc64le \
-          --client-arch ${{ matrix.compiler_arch }} \
+          --client-arch amd64 \
           --tag $(basename ${{ github.event.ref }})
 
-
-  build-s390x-host:
+  run-tests-ppc64le-i386:
     name: |
-      host s390x
+      test (host: ppc64le, client: i386)
     runs-on: ubuntu-latest
+    needs:
+    - build-host-ppc64le
+    - build-client-i386
 
     steps:
     - name: Checkout repo
@@ -444,25 +889,21 @@ jobs:
       run: |
         pip3 install -r requirements.txt
 
-    - name: Build host image
+    - name: Run tests
       run: |
-        ./builder.py build-host \
+        ./builder.py test \
           --distro debian:buster \
-          --host-arch s390x \
+          --host-arch ppc64le \
+          --client-arch i386 \
           --tag $(basename ${{ github.event.ref }})
 
-  build-s390x-clients:
+  run-tests-ppc64le-arm64v8:
     name: |
-      client ${{ matrix.compiler_arch }}
+      test (host: ppc64le, client: arm64v8)
     runs-on: ubuntu-latest
-    needs: build-s390x-host
-
-    strategy:
-      matrix:
-        include:
-        - host_arch: s390x
-          compiler_arch: s390x
-
+    needs:
+    - build-host-ppc64le
+    - build-client-arm64v8
 
     steps:
     - name: Checkout repo
@@ -481,19 +922,80 @@ jobs:
       run: |
         pip3 install -r requirements.txt
 
-    - name: Build client image
+    - name: Run tests
       run: |
-        ./builder.py build-client \
+        ./builder.py test \
           --distro debian:buster \
-          --client-arch ${{ matrix.compiler_arch }} \
+          --host-arch ppc64le \
+          --client-arch arm64v8 \
           --tag $(basename ${{ github.event.ref }})
+
+  run-tests-ppc64le-ppc64le:
+    name: |
+      test (host: ppc64le, client: ppc64le)
+    runs-on: ubuntu-latest
+    needs:
+    - build-host-ppc64le
+    - build-client-ppc64le
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
+
+    - name: Run tests
+      run: |
+        ./builder.py test \
+          --distro debian:buster \
+          --host-arch ppc64le \
+          --client-arch ppc64le \
+          --tag $(basename ${{ github.event.ref }})
+
+
+
+  run-tests-s390x-s390x:
+    name: |
+      test (host: s390x, client: s390x)
+    runs-on: ubuntu-latest
+    needs:
+    - build-host-s390x
+    - build-client-s390x
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip3 install -r requirements.txt
 
     - name: Run tests
       run: |
         ./builder.py test \
           --distro debian:buster \
           --host-arch s390x \
-          --client-arch ${{ matrix.compiler_arch }} \
+          --client-arch s390x \
           --tag $(basename ${{ github.event.ref }})
 
 

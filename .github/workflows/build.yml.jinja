@@ -27,9 +27,9 @@ on:
 
 jobs:
   {% for host_arch in host_archs %}
-  build-{{ host_arch }}-host:
+  build-host-{{ host_arch }}:
     name: |
-      host {{ host_arch }}
+      host: {{ host_arch }}
     runs-on: ubuntu-latest
 
     steps:
@@ -42,19 +42,13 @@ jobs:
             --distro {{ distro }} \
             --host-arch {{ host_arch }} \
             --tag $(basename {% raw %}${{ github.event.ref }}{% endraw %})
+  {% endfor %}
 
-  build-{{ host_arch }}-clients:
+  {% for compiler_arch in compiler_archs %}
+  build-client-{{ compiler_arch }}:
     name: |
-      client {% raw %}${{ matrix.compiler_arch }}{% endraw %}
+      client: {{ compiler_arch }}
     runs-on: ubuntu-latest
-    needs: build-{{ host_arch }}-host
-
-    strategy:
-      matrix:
-        include: {% for compiler_arch in host_arch|compiler_archs %}
-          - host_arch: {{ host_arch }}
-            compiler_arch: {{ compiler_arch }}
-          {% endfor %}
 
     steps:
       - *checkout_repo
@@ -64,17 +58,32 @@ jobs:
         run: |
           ./builder.py build-client \
             --distro {{ distro }} \
-            --client-arch {% raw %}${{ matrix.compiler_arch }}{% endraw %} \
+            --client-arch {{ compiler_arch }} \
             --tag $(basename {% raw %}${{ github.event.ref }}{% endraw %})
+  {% endfor %}
 
+  {% for host_arch in host_archs %}
+  {% for compiler_arch in host_arch|compiler_archs %}
+  run-tests-{{ host_arch }}-{{ compiler_arch }}:
+    name: |
+      test (host: {{ host_arch }}, client: {{ compiler_arch }})
+    runs-on: ubuntu-latest
+    needs:
+      - build-host-{{ host_arch }}
+      - build-client-{{ compiler_arch }}
+
+    steps:
+      - *checkout_repo
+      - *install_emulation_deps
+      - *install_pip_requirements
       - name: Run tests
         run: |
           ./builder.py test \
             --distro {{ distro }} \
             --host-arch {{ host_arch }} \
-            --client-arch {% raw %}${{ matrix.compiler_arch }}{% endraw %} \
+            --client-arch {{ compiler_arch }} \
             --tag $(basename {% raw %}${{ github.event.ref }}{% endraw %})
-
+  {% endfor %}
   {% endfor %}
 
   {# push_manifests:

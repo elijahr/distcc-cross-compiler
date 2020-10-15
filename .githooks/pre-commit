@@ -12,6 +12,6 @@ do
 	then
 		echo "Change detected, re-rendering"
 		./builder.py render-github-actions
-		git add .github/workflows || true
+		git add .github/workflows/*.yml || true
 	fi
 done
