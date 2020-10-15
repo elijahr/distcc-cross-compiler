@@ -1,6 +1,6 @@
 # Rendered from .github/workflows/build.yml.jinja
 
-name: Build archlinux images
+name: archlinux
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 jobs:
   build-amd64-host:
     name: |
-      Build archlinux host amd64
+      host amd64
     runs-on: ubuntu-latest
 
     steps:
@@ -39,7 +39,7 @@ jobs:
 
   build-amd64-clients:
     name: |
-      Build archlinux client ${{ matrix.compiler_arch }} (host: amd64)
+      client ${{ matrix.compiler_arch }}
     runs-on: ubuntu-latest
     needs: build-amd64-host
 

@@ -1,6 +1,6 @@
 # Rendered from .github/workflows/build.yml.jinja
 
-name: Build debian:buster images
+name: debian:buster
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 jobs:
   build-amd64-host:
     name: |
-      Build debian-buster host amd64
+      host amd64
     runs-on: ubuntu-latest
 
     steps:
@@ -39,7 +39,7 @@ jobs:
 
   build-amd64-clients:
     name: |
-      Build debian-buster client ${{ matrix.compiler_arch }} (host: amd64)
+      client ${{ matrix.compiler_arch }}
     runs-on: ubuntu-latest
     needs: build-amd64-host
 
@@ -100,7 +100,7 @@ jobs:
 
   build-i386-host:
     name: |
-      Build debian-buster host i386
+      host i386
     runs-on: ubuntu-latest
 
     steps:
@@ -129,7 +129,7 @@ jobs:
 
   build-i386-clients:
     name: |
-      Build debian-buster client ${{ matrix.compiler_arch }} (host: i386)
+      client ${{ matrix.compiler_arch }}
     runs-on: ubuntu-latest
     needs: build-i386-host
 
@@ -184,7 +184,7 @@ jobs:
 
   build-arm32v7-host:
     name: |
-      Build debian-buster host arm32v7
+      host arm32v7
     runs-on: ubuntu-latest
 
     steps:
@@ -213,7 +213,7 @@ jobs:
 
   build-arm32v7-clients:
     name: |
-      Build debian-buster client ${{ matrix.compiler_arch }} (host: arm32v7)
+      client ${{ matrix.compiler_arch }}
     runs-on: ubuntu-latest
     needs: build-arm32v7-host
 
@@ -259,7 +259,7 @@ jobs:
 
   build-arm64v8-host:
     name: |
-      Build debian-buster host arm64v8
+      host arm64v8
     runs-on: ubuntu-latest
 
     steps:
@@ -288,7 +288,7 @@ jobs:
 
   build-arm64v8-clients:
     name: |
-      Build debian-buster client ${{ matrix.compiler_arch }} (host: arm64v8)
+      client ${{ matrix.compiler_arch }}
     runs-on: ubuntu-latest
     needs: build-arm64v8-host
 
@@ -340,7 +340,7 @@ jobs:
 
   build-ppc64le-host:
     name: |
-      Build debian-buster host ppc64le
+      host ppc64le
     runs-on: ubuntu-latest
 
     steps:
@@ -369,7 +369,7 @@ jobs:
 
   build-ppc64le-clients:
     name: |
-      Build debian-buster client ${{ matrix.compiler_arch }} (host: ppc64le)
+      client ${{ matrix.compiler_arch }}
     runs-on: ubuntu-latest
     needs: build-ppc64le-host
 
@@ -424,7 +424,7 @@ jobs:
 
   build-s390x-host:
     name: |
-      Build debian-buster host s390x
+      host s390x
     runs-on: ubuntu-latest
 
     steps:
@@ -453,7 +453,7 @@ jobs:
 
   build-s390x-clients:
     name: |
-      Build debian-buster client ${{ matrix.compiler_arch }} (host: s390x)
+      client ${{ matrix.compiler_arch }}
     runs-on: ubuntu-latest
     needs: build-s390x-host
 

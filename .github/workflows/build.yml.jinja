@@ -18,7 +18,7 @@ _anchors:
     run: |
       pip3 install -r requirements.txt
 
-name: Build {{ distro }} images
+name: {{ distro }}
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
   {% for host_arch in host_archs %}
   build-{{ host_arch }}-host:
     name: |
-      Build {{ distro_slug }} host {{ host_arch }}
+      host {{ host_arch }}
     runs-on: ubuntu-latest
 
     steps:
@@ -45,7 +45,7 @@ jobs:
 
   build-{{ host_arch }}-clients:
     name: |
-      Build {{ distro_slug }} client {% raw %}${{ matrix.compiler_arch }}{% endraw %} (host: {{ host_arch }})
+      client {% raw %}${{ matrix.compiler_arch }}{% endraw %}
     runs-on: ubuntu-latest
     needs: build-{{ host_arch }}-host
 

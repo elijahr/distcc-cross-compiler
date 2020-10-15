@@ -380,6 +380,8 @@ The build scripts essentially do the following:
 
 The tests verify that an arbitrary C project (cJSON) is compiled using distcc, and that the resulting executable is valid. The tests then verify that subsequent builds use ccache to avoid repeat compilation.
 
+There are some useful git hooks that can be enabled by running `git config --local core.hooksPath .githooks/`.
+
 If you are looking for an idea, contributions for the following are especially welcome:
 
 * Project name suggestions (distcc-cross-compiler is a mouthful)
