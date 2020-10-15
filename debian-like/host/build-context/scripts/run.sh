@@ -1,18 +1,15 @@
 #!/bin/bash
 
 set -uxeo pipefail
+shopt -s nullglob
 
 declare -a pids
-
-services=( "distccd-x86_64-linux-gnu" "distccd-i686-linux-gnu" \
-           "distccd-arm-linux-gnueabihf" "distccd-aarch64-linux-gnu" \
-           "distccd-powerpc64le-linux-gnu" "distccd-s390x-linux-gnu")
 
 on_sigint () {
   echo "Interrupted..."
   for pid in ${pids[@]}
   do
-    kill $pid || true
+    kill -KILL $pid || true
   done
 }
 
@@ -20,16 +17,18 @@ on_sigterm () {
   echo "Terminated..."
   for pid in ${pids[@]}
   do
-    kill -TERM $pid || true
+    kill -KILL $pid || true
   done
 }
 
 main () {
-  for service in ${services[@]}
+  echo "Starting distccd daemons"
+  for service in /etc/init.d/distccd.host-*
   do
-    /etc/init.d/$service start
-    pids+=($(cat /var/run/$service.pid))
-    tail -f /var/log/$service.log 1>&2 &
+    $service start
+    service_name=$(basename $service)
+    pids+=($(cat /var/run/$service_name.pid))
+    tail -f /var/log/$service_name.log 1>&2 &
     pids+=($!)
   done
   wait

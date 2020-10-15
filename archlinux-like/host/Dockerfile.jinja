@@ -1,4 +1,4 @@
-FROM {host_image}
+FROM {{ host_arch|image }}
 
 # Install deps
 RUN pacman -Syu --noconfirm distcc base-devel
@@ -12,16 +12,13 @@ COPY etc/conf.d/* /etc/conf.d/
 COPY usr/lib/systemd/system/* /usr/lib/systemd/system/
 COPY scripts/* /scripts/
 
-WORKDIR /scripts
-
 RUN \
-  chmod +x run.sh && \
-  chmod +x setup.sh && \
-  ./setup.sh
+  chmod +x /scripts/* && \
+  /scripts/setup.sh
 
 # Replace systemctl with docker-friendly version
 RUN \
   rm /usr/bin/systemctl && \
-  ln -s ./scripts/systemctl3.py /usr/bin/systemctl
+  ln -s /scripts/systemctl3.py /usr/bin/systemctl
 
-CMD ./run.sh
+CMD /scripts/run.sh

@@ -5,8 +5,8 @@
 # same filehandle.  You would otherwise need to shut down and restart
 # distccd.
 
-/var/log/distccd-{toolchain}.log {{
+/var/log/distccd.host-{{ host_arch }}.compiler-{{ compiler_arch }}.log {
        missingok
        copytruncate
        notifempty
-}}
+ }

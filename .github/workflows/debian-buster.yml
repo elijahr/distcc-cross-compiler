@@ -1,0 +1,444 @@
+# Rendered from .github/workflows/build.yml.jinja
+
+name: Build debian:buster images
+
+on:
+  push:
+    branches: ['*']
+    tags: ['*']
+
+jobs:
+  build-amd64-host:
+    name: |
+      Build debian-buster host amd64
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip install -r requirements.txt
+
+    - name: Build host image
+      run: |
+        ./builder.py build-host debian:buster amd64
+
+  build-amd64-clients:
+    name: |
+      Build debian-buster client ${{ matrix.compiler_arch }} (host: amd64)
+    runs-on: ubuntu-latest
+    depends-on: build-amd64-host
+
+    strategy:
+      matrix:
+        include:
+        - host_arch: amd64
+          compiler_arch: amd64
+
+        - host_arch: amd64
+          compiler_arch: i386
+
+        - host_arch: amd64
+          compiler_arch: arm32v7
+
+        - host_arch: amd64
+          compiler_arch: arm64v8
+
+        - host_arch: amd64
+          compiler_arch: ppc64le
+
+        - host_arch: amd64
+          compiler_arch: s390x
+
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip install -r requirements.txt
+
+    - name: Build client image
+      run: |
+        ./builder.py build-client debian:buster amd64 ${{ matrix.compiler_arch }}
+
+
+  build-i386-host:
+    name: |
+      Build debian-buster host i386
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip install -r requirements.txt
+
+    - name: Build host image
+      run: |
+        ./builder.py build-host debian:buster i386
+
+  build-i386-clients:
+    name: |
+      Build debian-buster client ${{ matrix.compiler_arch }} (host: i386)
+    runs-on: ubuntu-latest
+    depends-on: build-i386-host
+
+    strategy:
+      matrix:
+        include:
+        - host_arch: i386
+          compiler_arch: amd64
+
+        - host_arch: i386
+          compiler_arch: i386
+
+        - host_arch: i386
+          compiler_arch: arm64v8
+
+        - host_arch: i386
+          compiler_arch: ppc64le
+
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip install -r requirements.txt
+
+    - name: Build client image
+      run: |
+        ./builder.py build-client debian:buster i386 ${{ matrix.compiler_arch }}
+
+
+  build-arm32v7-host:
+    name: |
+      Build debian-buster host arm32v7
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip install -r requirements.txt
+
+    - name: Build host image
+      run: |
+        ./builder.py build-host debian:buster arm32v7
+
+  build-arm32v7-clients:
+    name: |
+      Build debian-buster client ${{ matrix.compiler_arch }} (host: arm32v7)
+    runs-on: ubuntu-latest
+    depends-on: build-arm32v7-host
+
+    strategy:
+      matrix:
+        include:
+        - host_arch: arm32v7
+          compiler_arch: arm32v7
+
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip install -r requirements.txt
+
+    - name: Build client image
+      run: |
+        ./builder.py build-client debian:buster arm32v7 ${{ matrix.compiler_arch }}
+
+
+  build-arm64v8-host:
+    name: |
+      Build debian-buster host arm64v8
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip install -r requirements.txt
+
+    - name: Build host image
+      run: |
+        ./builder.py build-host debian:buster arm64v8
+
+  build-arm64v8-clients:
+    name: |
+      Build debian-buster client ${{ matrix.compiler_arch }} (host: arm64v8)
+    runs-on: ubuntu-latest
+    depends-on: build-arm64v8-host
+
+    strategy:
+      matrix:
+        include:
+        - host_arch: arm64v8
+          compiler_arch: amd64
+
+        - host_arch: arm64v8
+          compiler_arch: i386
+
+        - host_arch: arm64v8
+          compiler_arch: arm64v8
+
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip install -r requirements.txt
+
+    - name: Build client image
+      run: |
+        ./builder.py build-client debian:buster arm64v8 ${{ matrix.compiler_arch }}
+
+
+  build-ppc64le-host:
+    name: |
+      Build debian-buster host ppc64le
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip install -r requirements.txt
+
+    - name: Build host image
+      run: |
+        ./builder.py build-host debian:buster ppc64le
+
+  build-ppc64le-clients:
+    name: |
+      Build debian-buster client ${{ matrix.compiler_arch }} (host: ppc64le)
+    runs-on: ubuntu-latest
+    depends-on: build-ppc64le-host
+
+    strategy:
+      matrix:
+        include:
+        - host_arch: ppc64le
+          compiler_arch: amd64
+
+        - host_arch: ppc64le
+          compiler_arch: i386
+
+        - host_arch: ppc64le
+          compiler_arch: arm64v8
+
+        - host_arch: ppc64le
+          compiler_arch: ppc64le
+
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip install -r requirements.txt
+
+    - name: Build client image
+      run: |
+        ./builder.py build-client debian:buster ppc64le ${{ matrix.compiler_arch }}
+
+
+  build-s390x-host:
+    name: |
+      Build debian-buster host s390x
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip install -r requirements.txt
+
+    - name: Build host image
+      run: |
+        ./builder.py build-host debian:buster s390x
+
+  build-s390x-clients:
+    name: |
+      Build debian-buster client ${{ matrix.compiler_arch }} (host: s390x)
+    runs-on: ubuntu-latest
+    depends-on: build-s390x-host
+
+    strategy:
+      matrix:
+        include:
+        - host_arch: s390x
+          compiler_arch: s390x
+
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+    - name: Install emulation dependencies
+      run: |
+        sudo apt-get update -q -y
+        sudo apt-get -qq install -y qemu qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+    - name: Install pip requirements
+      run: |
+        pip install -r requirements.txt
+
+    - name: Build client image
+      run: |
+        ./builder.py build-client debian:buster s390x ${{ matrix.compiler_arch }}
+
+
+
+  push_manifests:
+    name: Push manifests
+    if: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
+      }}
+
+    runs-on: ubuntu-latest
+    needs: build
+
+    strategy:
+      matrix:
+        version: [latest, '${{ github.ref }}']
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        submodules: recursive
+
+
+    - name: Push manifest
+      run: |-
+        echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login \
+          -u elijahru --password-stdin
+        docker images
+        ./scripts/push-manifests-debian.sh \
+          $(basename ${{ matrix.version }}) \
+          debian-buster

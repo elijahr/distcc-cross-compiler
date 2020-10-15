@@ -12,6 +12,9 @@ then
   ln -s /usr/bin/ccache /usr/lib/ccache/bin/cc
 fi
 
+# Print ccache config
+ccache -p
+
 # # Fix naming of compilers
 # toolchains=( "armv5tel-unknown-linux-gnueabi" "armv6l-unknown-linux-gnueabihf" \
 #              "armv7l-unknown-linux-gnueabihf" "aarch64-unknown-linux-gnu")

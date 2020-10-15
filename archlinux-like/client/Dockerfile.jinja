@@ -1,4 +1,4 @@
-FROM {client_image}
+FROM {{ compiler_arch|image }}
 
 # Install deps
 RUN pacman -Syu --noconfirm distcc ccache base-devel
@@ -6,11 +6,16 @@ RUN pacman -Syu --noconfirm distcc ccache base-devel
 # Clear pacman cache
 RUN pacman -Sc --noconfirm || true
 
-WORKDIR /root
+RUN \
+  mkdir -p /scripts && \
+  mkdir -p /root/.ccache
 
-COPY ./scripts/archlinux/client/setup.sh setup.sh
+COPY scripts/* /scripts/
+COPY root/.ccache/* /root/.ccache/
 
-RUN ./setup.sh
+RUN \
+    chmod +x /scripts/* && \
+    /scripts/setup.sh
 
 # Use ccache wrappers first, distcc wrappers second
 ENV PATH=/usr/lib/ccache/bin:/usr/lib/distcc/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl
@@ -19,4 +24,4 @@ ENV PATH=/usr/lib/ccache/bin:/usr/lib/distcc/bin:/usr/local/bin:/usr/bin:/bin:/u
 ENV DISTCC_FALLBACK=0
 
 # Connect to distccd on default docker network
-ENV DISTCC_HOSTS=172.17.0.1:{host_port}
+ENV DISTCC_HOSTS=172.17.0.1:{{ host_arch|compiler_port }}

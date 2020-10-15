@@ -170,7 +170,7 @@ push_distcc_host_archlinux () {
   docker manifest push ${manifest}
 }
 
-push_distcc_client_archlinux () {
+push_distcc_compiler_archlinux () {
   manifest=elijahru/distcc-cross-compiler-client-${distro}:${version}
   tags=( \
     ${manifest}-amd64 \
@@ -214,7 +214,7 @@ main () {
       ;;
     archlinux*|manjaro*)
       push_distcc_host_archlinux
-      push_distcc_client_archlinux
+      push_distcc_compiler_archlinux
       ;;
     *)
       echo "Bad distro argument '$distro'"

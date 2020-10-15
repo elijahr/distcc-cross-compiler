@@ -1,12 +1,12 @@
 # Defaults for distcc initscript
-# sourced by /etc/init.d/distccd-{toolchain}
+# sourced by /etc/init.d/distccd.host-{{ host_arch }}.compiler-{{ compiler_arch }}
 
 #
 # should distcc be started on boot?
 #
-# {flag}="false"
+# {{ compiler_arch|flag }}="false"
 
-{flag}="true"
+{{ compiler_arch|flag }}="true"
 
 #
 # Which networks/hosts should be allowed to connect to the daemon?
@@ -29,9 +29,9 @@ LISTENER="0.0.0.0"
 #
 # Which port should distccd listen on?
 #
-# PORT="{host_port}"
+# PORT="{{ compiler_arch|compiler_port }}"
 
-PORT="{host_port}"
+PORT="{{ compiler_arch|compiler_port }}"
 
 #
 # You can specify a (positive) nice level for the distcc process here

@@ -6,8 +6,10 @@ Generate various docker and config files across a matrix of archs/distros.
 
 import abc
 import argparse
+import contextlib
 import functools
 import itertools
+import json
 import os
 import pathlib
 import re
@@ -15,7 +17,13 @@ import shutil
 import sys
 import time
 
+from jinja2 import (
+    contextfilter,
+    Environment,
+    StrictUndefined,
+)
 from path import Path
+from ruamel import yaml
 from sh import docker as _docker  # pylint: disable=no-name-in-module
 from sh import docker_compose as _docker_compose  # pylint: disable=no-name-in-module
 from sh import ErrorReturnCode_1  # pylint: disable=no-name-in-module
@@ -25,8 +33,13 @@ from sh import which  # pylint: disable=no-name-in-module
 docker = functools.partial(_docker,  _out=sys.stdout, _err=sys.stderr)
 docker_compose = functools.partial(_docker_compose,  _out=sys.stdout, _err=sys.stderr)
 
-
 PROJECT_DIR = Path(os.path.dirname(__file__))
+
+
+class Dumper(yaml.RoundTripDumper):
+    def ignore_aliases(self, data):
+        # Strip aliases
+        return True
 
 
 def slugify(string):
@@ -45,31 +58,24 @@ def configure_qemu():
                'multiarch/qemu-user-static', '--reset', '-p', 'yes')
 
 
-def render(template, out, context):
-    with PROJECT_DIR:
-        with open(template, 'r') as f:
-            rendered = f.read().format(**context)
-        dir_name = os.path.dirname(out)
-        prev = None
-        if not os.path.exists(dir_name):
-            os.makedirs(dir_name)
-        with open(out, 'w') as f:
-            f.write(rendered)
-        print(f'Wrote {out}')
-        return out
-
-
 class Distro(metaclass=abc.ABCMeta):
     template_path = None
     registry = {}
     host_archs = ()
-    client_archs = ()
+    compiler_archs = ()
     ports_by_arch = {}
     toolchains_by_arch = {}
+    compiler_archs_by_host_arch = {}
 
     def __init__(self, name):
         self.name = name
         self.registry[name] = self
+        self._context = None
+        self.env = Environment(autoescape=False, undefined=StrictUndefined)
+        self.env.filters['compiler_archs'] = self.compiler_archs_by_host_arch.get
+        self.env.filters['compiler_port'] = self.ports_by_arch.get
+        self.env.filters['toolchain'] = self.toolchains_by_arch.get
+        self.env.filters['compiler_path_part'] = self.get_compiler_path_part
 
     def __repr__(self):
         return f'{self.__class__.__name__}({repr(self.name)})'
@@ -86,95 +92,178 @@ class Distro(metaclass=abc.ABCMeta):
         for distro in cls.registry.values():
             distro.clean()
 
-    def clean(self):
-        shutil.rmtree(self.out_path)
-        print(f'Removed {self.out_path}')
+    @classmethod
+    def render_all(cls, **context):
+        for distro in cls.registry.values():
+            distro.render(**context)
 
     @classmethod
-    def build_all(cls, tag=None):
+    def build_all(cls, tag):
         for distro in cls.registry.values():
             for host_arch in distro.host_archs:
                 distro.build_host(host_arch, tag=tag)
-            for client_arch in distro.client_archs:
-                distro.build_client(client_arch, tag=tag)
+                for compiler_arch in distro.compiler_archs_by_host_arch[host_arch]:
+                    distro.build_client(host_arch, compiler_arch, tag=tag)
+
+    @property
+    def context(self):
+        if self._context is None:
+            raise RuntimeError('Distro context not entered')
+        return self._context
+
+    @contextlib.contextmanager
+    def set_context(self, **context):
+        prev_context = self._context.copy() if self._context else None
+        new_context = self._context.copy() if self._context else {}
+        new_context.update(context)
+        if not new_context.get('tag'):
+            raise KeyError('tag not given')
+        self._context = self.get_template_context(**new_context)
+        try:
+            yield
+        finally:
+            self._context = prev_context
+
+    def render_template(self, template_path, out_path):
+        with PROJECT_DIR:
+            template_path = template_path.format(**self.context)
+            with open(template_path, 'r') as f:
+                rendered = self.env.from_string(f.read()).render(**self.context)
+            out_path = out_path.format(**self.context)
+            dir_name = os.path.dirname(out_path)
+            if not os.path.exists(dir_name):
+                os.makedirs(dir_name)
+            rendered = f'# Rendered from {template_path}\n\n' + rendered
+            with open(out_path, 'w') as f:
+                f.write(rendered)
+            print(f'Rendered {template_path} -> {out_path}')
+            return out_path
+
+    def flatten_yaml(self, yaml_path):
+        with PROJECT_DIR:
+            yaml_path = yaml_path.format(**self.context)
+            with open(yaml_path, 'r') as f:
+                rendered = yaml.load(f, Loader=yaml.RoundTripLoader)
+
+            # Remove _anchors section
+            if '_anchors' in rendered:
+                del rendered['_anchors']
+
+            # Use custom Dumper that replaces aliases with referenced content
+            rendered = yaml.dump(rendered, Dumper=Dumper)
+
+            with open(yaml_path, 'w') as f:
+                f.write(rendered)
+
+            print(f'Flattened {yaml_path}')
+            return yaml_path
+
+    @property
+    def docker_compose_yml_path(self):
+        return self.out_path / f'docker-compose.{slugify(self.name)}.yml'
+
+    @property
+    def github_workflows_yml_path(self):
+        return Path(f'.github/workflows/{slugify(self.name)}.yml')
+
+    def clean(self):
+        if os.path.exists(self.out_path):
+            shutil.rmtree(self.out_path)
+            print(f'Removed {self.out_path}')
+        if os.path.exists(self.github_workflows_yml_path):
+            shutil.rmtree(self.github_workflows_yml_path)
+            print(f'Removed {self.github_workflows_yml_path}')
 
     @property
     def out_path(self):
         return Path(slugify(self.name))
 
     @abc.abstractmethod
-    def get_compiler_path_part_by_arch(self, host_arch, client_arch):
+    def get_compiler_path_part(self, compiler_arch):
         ...
 
     def get_template_context(self, **context):
         context.update(dict(
             distro=self.name,
             distro_slug=slugify(self.name),
+            host_archs=self.host_archs,
+            compiler_archs=self.compiler_archs,
         ))
-
-        if not context.get('tag'):
-            context['tag'] = 'devel'
-
-        host_arch = context.get('host_arch')
-        client_arch = context.get('client_arch')
-        if client_arch:
-            context.update(dict(
-                host_port=self.ports_by_arch[client_arch],
-                toolchain=self.toolchains_by_arch.get(client_arch),
-            ))
-            if host_arch:
-                context.update(dict(
-                    compiler_path_part=self.get_compiler_path_part_by_arch(
-                        host_arch, client_arch),
-                ))
         return context
 
-    def render(self, **kwargs):
-        self.render_dockerfile_host(**kwargs)
-        self.render_dockerfile_client(**kwargs)
-        self.render_docker_compose(**kwargs)
+    def render(self, **context):
+        with self.set_context(**context):
+            self.render_dockerfile_host()
+            self.render_dockerfile_client()
+            self.render_docker_compose()
+            self.render_github_workflows()
 
-    def render_dockerfile_host(self, **kwargs):
+            with PROJECT_DIR:
+                for root, _, files in os.walk(self.template_path):
+                    root = Path(root)
+                    new_root = Path(root.replace(self.template_path, self.out_path))
+                    for f in files:
+                        if '.jinja' in f:
+                            continue
+                        if not os.path.exists(os.path.dirname(new_root / f)):
+                            os.makedirs(os.path.dirname(new_root / f))
+                        shutil.copyfile(root / f, new_root / f)
+                        print(f'Copied {root / f} -> {new_root / f}')
+
+                for root, _, files in os.walk(Path('shared-build-context') / 'host'):
+                    root = Path(root)
+                    new_root = Path(root.replace('shared-build-context/host', self.out_path / 'host/build-context'))
+                    for f in files:
+                        if not os.path.exists(os.path.dirname(new_root / f)):
+                            os.makedirs(os.path.dirname(new_root / f))
+                        shutil.copyfile(root / f, new_root / f)
+                        print(f'Copied {root / f} -> {new_root / f}')
+
+                for root, _, files in os.walk(Path('shared-build-context') / 'client'):
+                    root = Path(root)
+                    new_root = Path(root.replace('shared-build-context/client', self.out_path / 'client/build-context'))
+                    for f in files:
+                        if not os.path.exists(os.path.dirname(new_root / f)):
+                            os.makedirs(os.path.dirname(new_root / f))
+                        shutil.copyfile(root / f, new_root / f)
+                        print(f'Copied {root / f} -> {new_root / f}')
+
+    def render_dockerfile_host(self):
         for host_arch in self.host_archs:
-            context = self.get_template_context(host_arch=host_arch, **kwargs)
-            render(
-                self.template_path / 'host/Dockerfile.template',
-                self.out_path / 'host' / f'Dockerfile.{host_arch}',
-                context,
-            )
-
-    def render_dockerfile_client(self, **kwargs):
-        for client_arch in self.client_archs:
-            context = self.get_template_context(client_arch=client_arch, **kwargs)
-            render(
-                self.template_path / 'client/Dockerfile.template',
-                self.out_path / 'client' /
-                f'Dockerfile.{client_arch}',
-                context,
-            )
-
-    def docker_compose_file_path(self, host_arch, client_arch):
-        distro_slug = slugify(self.name)
-        return self.out_path / f'docker-compose.{distro_slug}.host-{host_arch}.client-{client_arch}.yml'
-
-    def render_docker_compose(self, **kwargs):
-        for host_arch in self.host_archs:
-            for client_arch in self.client_archs:
-                context = self.get_template_context(
-                    host_arch=host_arch, client_arch=client_arch, **kwargs)
-                render(
-                    self.template_path / 'docker-compose.template.yml',
-                    self.docker_compose_file_path(host_arch, client_arch),
-                    context,
+            with self.set_context(host_arch=host_arch):
+                self.render_template(
+                    self.template_path / 'host/Dockerfile.jinja',
+                    self.out_path / 'host' / 'Dockerfile.{host_arch}',
                 )
 
-    def build_host(self, host_arch, **kwargs):
+    def render_dockerfile_client(self):
+        for host_arch in self.host_archs:
+            for compiler_arch in self.compiler_archs_by_host_arch[host_arch]:
+                with self.set_context(host_arch=host_arch, compiler_arch=compiler_arch):
+                    self.render_template(
+                        self.template_path / 'client/Dockerfile.jinja',
+                        self.out_path / 'client' /
+                        'Dockerfile.{compiler_arch}',
+                    )
+
+    def render_docker_compose(self):
+        self.render_template(
+            self.template_path / 'docker-compose.yml.jinja',
+            self.docker_compose_yml_path,
+        )
+
+    def render_github_workflows(self):
+        self.render_template(
+            Path('.github/workflows/build.yml.jinja'),
+            self.github_workflows_yml_path,
+        )
+        # Replace YAML aliases in rendered jinja output
+        self.flatten_yaml(self.github_workflows_yml_path)
+
+    def build_host(self, host_arch, tag):
         configure_qemu()
 
-        context = self.get_template_context(**kwargs)
-        self.render(**context)
-
-        image = 'elijahru/distcc-cross-compiler-host-{distro_slug}:{tag}-{host_arch}'.format(host_arch=host_arch, **context)
+        image = f'elijahru/distcc-cross-compiler-host-{slugify(self.name)}:{tag}-{host_arch}'
         dockerfile = self.out_path / f'host/Dockerfile.{host_arch}'
         try:
             docker('pull', image)
@@ -188,13 +277,11 @@ class Distro(metaclass=abc.ABCMeta):
             '--cache-from', image,
         )
 
-    def build_client(self, client_arch, **kwargs):
+    def build_client(self, host_arch, compiler_arch, tag):
         configure_qemu()
-        context = self.get_template_context(client_arch=client_arch, **kwargs)
-        self.render(**context)
 
-        image = 'elijahru/distcc-cross-compiler-client-{distro_slug}:{tag}-{client_arch}'.format(**context)
-        dockerfile = self.out_path / f'client/Dockerfile.{client_arch}'
+        image = f'elijahru/distcc-cross-compiler-client-{slugify(self.name)}:{tag}-{compiler_arch}'
+        dockerfile = self.out_path / f'client/Dockerfile.{compiler_arch}'
         try:
             docker('pull', image)
         except ErrorReturnCode_1:
@@ -207,24 +294,50 @@ class Distro(metaclass=abc.ABCMeta):
             '--cache-from', image,
         )
 
-    def test(self, host_arch, client_arch, **kwargs):
-        self.render(**kwargs)
-
-        docker_compose_file = self.docker_compose_file_path(host_arch, client_arch)
-
-        # Bring up the distccd host
-        docker_compose('-f', docker_compose_file, 'up', '-d', 'distcc-cross-compiler-host')
+    @contextlib.contextmanager
+    def run_host(self, host_arch):
+        image_id = lambda: docker(
+            'ps',
+            '--filter', f'name=host-{host_arch}',
+            '--format', '{{.ID}}',
+            _out=None, _err=None,
+        ).strip()
+        id = image_id()
+        if id:
+            docker('kill', id, _out=None, _err=None)
+        docker_compose('-f', self.docker_compose_yml_path, 'up', '-d', f'host-{host_arch}')
         time.sleep(5)
+        try:
+            yield
+        finally:
+            id = image_id()
+            if id:
+                docker('kill', id, _out=None, _err=None)
 
-        docker_compose('-f', docker_compose_file, 'run', 'distcc-cross-compiler-client')
+    def test(self, host_arch, compiler_arch):
+        with self.run_host(host_arch):
+            docker_compose('-f', self.docker_compose_yml_path, 'run', f'client-{compiler_arch}')
+
+        # Get logs from most recent host run
+        logs = docker_compose('-f', self.docker_compose_yml_path, 'logs', f'host-{host_arch}', _out=None, _err=None)\
+            .split('Starting distccd daemons')[-1]
+
+        # Strip ANSI escape codes
+        logs = re.sub(r'\x1b[^m]*m', '', logs)
+
+        import pdb; pdb.set_trace()
+
+        assert len(re.findall(r'distccd\[[0-9]+\] .* COMPILE_OK .* cJSON.c', logs)) == 3
+        assert len(re.findall(r'distccd\[[0-9]+\] .* COMPILE_OK .* cJSON_Utils.c', logs)) == 3
+        print('OK')
 
 
 class DebianLike(Distro):
     template_path = Path('debian-like')
 
     host_archs = ('amd64', 'i386', 'arm32v7', 'arm64v8', 'ppc64le', 's390x')
-    client_archs = ('amd64', 'i386', 'arm32v7', 'arm64v8', 'ppc64le', 's390x')
-    compilers_by_host_arch = {
+    compiler_archs = ('amd64', 'i386', 'arm32v7', 'arm64v8', 'ppc64le', 's390x')
+    compiler_archs_by_host_arch = {
         'amd64': ('amd64', 'i386', 'arm32v7', 'arm64v8', 'ppc64le', 's390x'),
         'i386': ('amd64', 'i386', 'arm64v8', 'ppc64le'),
         'arm32v7': ('arm32v7', ),
@@ -265,73 +378,57 @@ class DebianLike(Distro):
         'arm64v8': 'START_DISTCC_AARCH64_LINUX_GNU',
     }
 
-    def get_apt_packages_by_host_arch(self, host_arch):
-        packages = 'build-essential g++ distcc'
-        for compiler_arch in self.compilers_by_host_arch[host_arch]:
+    def __init__(self, name):
+        super(DebianLike, self).__init__(name)
+        self.env.filters['flag'] = self.flags_by_arch.get
+        self.env.filters['apt_packages'] = self.get_apt_packages
+
+    def get_apt_packages(self, host_arch):
+        packages = 'build-essential g++ distcc lsb-base'
+        for compiler_arch in self.compiler_archs_by_host_arch[host_arch]:
             packages += f' {self.packages_by_arch[compiler_arch]}'
         return packages
 
-    def get_compiler_path_part_by_arch(self, host_arch, compiler_arch):
-        if host_arch == compiler_arch:
+    def get_compiler_path_part(self, compiler_arch):
+        if self.context['host_arch'] == compiler_arch:
             return ''
         return Path('/usr/local/') / self.toolchains_by_arch[compiler_arch] / 'bin:'
 
-    def get_template_context(self, **context):
-        context = super(DebianLike, self).get_template_context(**context)
-        client_arch = context.get('client_arch')
-        host_arch = context.get('host_arch')
+    def render(self, **context):
+        with self.set_context(**context):
+            super(DebianLike, self).render(**context)
+            self.render_initd_distccd()
 
-        if client_arch:
-            context.update(dict(
-                flag=self.flags_by_arch[client_arch],
-            ))
-
-        if host_arch:
-            context.update(dict(
-                packages=self.get_apt_packages_by_host_arch(host_arch),
-            ))
-
-        return context
-
-    def render(self, **kwargs):
-        super(DebianLike, self).render(**kwargs)
-        self.render_initd_distccd(**kwargs)
-
-    def render_initd_distccd(self, **kwargs):
+    def render_initd_distccd(self):
         for host_arch in self.host_archs:
-            for client_arch in self.compilers_by_host_arch[host_arch]:
-                context = self.get_template_context(
-                    host_arch=host_arch, client_arch=client_arch, **kwargs)
-
-                render(
-                    self.template_path /
-                    'host/build-context/etc/default/distccd.template',
-                    self.out_path / 'host/build-context/etc/default' /
-                    f'distccd.host-{host_arch}.client-{client_arch}',
-                    context,
-                )
-                render(
-                    self.template_path /
-                    'host/build-context/etc/init.d/distccd.template',
-                    self.out_path / 'host/build-context/etc/init.d' /
-                    f'distccd.host-{host_arch}.client-{client_arch}',
-                    context,
-                )
-                render(
-                    self.template_path /
-                    'host/build-context/etc/logrotate.d/distccd.template',
-                    self.out_path / 'host/build-context/etc/logrotate.d' /
-                    f'distccd.host-{host_arch}.client-{client_arch}',
-                    context,
-                )
+            for compiler_arch in self.compiler_archs_by_host_arch[host_arch]:
+                with self.set_context(host_arch=host_arch, compiler_arch=compiler_arch):
+                    self.render_template(
+                        self.template_path /
+                        'host/build-context/etc/default/distccd.jinja',
+                        self.out_path / 'host/build-context/etc/default' /
+                        'distccd.host-{host_arch}.compiler-{compiler_arch}',
+                    )
+                    self.render_template(
+                        self.template_path /
+                        'host/build-context/etc/init.d/distccd.jinja',
+                        self.out_path / 'host/build-context/etc/init.d' /
+                        'distccd.host-{host_arch}.compiler-{compiler_arch}',
+                    )
+                    self.render_template(
+                        self.template_path /
+                        'host/build-context/etc/logrotate.d/distccd.jinja',
+                        self.out_path / 'host/build-context/etc/logrotate.d' /
+                        'distccd.host-{host_arch}.compiler-{compiler_arch}',
+                    )
 
 
 class ArchLinuxLike(Distro):
     template_path = Path('archlinux-like')
 
     host_archs = ('amd64', )
-    client_archs = ('amd64', 'arm32v5', 'arm32v6', 'arm32v7', 'arm64v8', )
-    compilers_by_host_arch = {
+    compiler_archs = ('amd64', 'arm32v5', 'arm32v6', 'arm32v7', 'arm64v8', )
+    compiler_archs_by_host_arch = {
         'amd64': ('amd64', 'arm32v5', 'arm32v6', 'arm32v7', 'arm64v8', ),
     }
     ports_by_arch = {
@@ -355,71 +452,36 @@ class ArchLinuxLike(Distro):
         'arm64v8': '/toolchains/x-tools8/aarch64-unknown-linux-gnu',
     }
 
-    def get_compiler_path_part_by_arch(self, host_arch, client_arch):
-        if host_arch == client_arch:
+    def __init__(self, name):
+        super(ArchLinuxLike, self).__init__(name)
+        self.env.filters['image'] = self.images_by_arch.get
+
+    def get_compiler_path_part(self, compiler_arch):
+        if self.context['host_arch'] == compiler_arch:
             return ''
-        return Path(self.toolchains_by_arch[client_arch]) / 'bin:'
+        return Path(self.toolchains_by_arch[compiler_arch]) / 'bin:'
 
-    def get_template_context(self, **context):
-        context = super(ArchLinuxLike, self).get_template_context(**context)
-        host_arch = context.get('host_arch')
-        client_arch = context.get('client_arch')
-        if client_arch:
-            context.update(dict(
-                client_image=self.images_by_arch[client_arch],
-                toolchain=self.toolchains_by_arch.get(client_arch),
-            ))
-        if host_arch:
-            context.update(dict(
-                host_image=self.images_by_arch[host_arch],
-            ))
-        return context
+    def render(self, **context):
+        with self.set_context(**context):
+            super(ArchLinuxLike, self).render(**context)
+            self.render_systemd_distccd()
 
-    def render(self, **kwargs):
-        super(ArchLinuxLike, self).render(**kwargs)
-        self.render_systemd_distccd(**kwargs)
-
-    def render_systemd_distccd(self, **kwargs):
+    def render_systemd_distccd(self):
         for host_arch in self.host_archs:
-            for client_arch in self.compilers_by_host_arch[host_arch]:
-                context = self.get_template_context(
-                    host_arch=host_arch, client_arch=client_arch, **kwargs)
-
-                render(
-                    self.template_path /
-                    'host/build-context/etc/conf.d/distccd.template',
-                    self.out_path / 'host/build-context/etc/conf.d' /
-                    f'distccd.host-{host_arch}.client-{client_arch}',
-                    context,
-                )
-                render(
-                    self.template_path /
-                    'host/build-context/usr/lib/systemd/system/distccd.template.service',
-                    self.out_path / 'host/build-context/usr/lib/systemd/system' /
-                    f'distccd.host-{host_arch}.client-{client_arch}.service',
-                    context,
-                )
-
-        host_build_context_dir = self.out_path / 'host/build-context'
-        client_build_context_dir = self.out_path / 'client/build-context'
-
-        with PROJECT_DIR:
-            scripts = self.template_path / 'client/scripts'
-            shutil.copytree(scripts, client_build_context_dir / 'scripts')
-            print(f'Copied {scripts} to {client_build_context_dir}')
-
-            shared = Path('shared-build-context/client')
-            shutil.copytree(shared, client_build_context_dir)
-            print(f'Copied {shared} to {client_build_context_dir}')
-
-            scripts = self.template_path / 'host/scripts'
-            shutil.copytree(scripts, host_build_context_dir / 'scripts')
-            print(f'Copied {scripts} to {host_build_context_dir}')
-
-            shared = Path('shared-build-context/host')
-            shutil.copytree(shared, host_build_context_dir)
-            print(f'Copied {shared} to {host_build_context_dir}')
-
+            for compiler_arch in self.compiler_archs_by_host_arch[host_arch]:
+                with self.set_context(host_arch=host_arch, compiler_arch=compiler_arch):
+                    self.render_template(
+                        self.template_path /
+                        'host/build-context/etc/conf.d/distccd.jinja',
+                        self.out_path / 'host/build-context/etc/conf.d' /
+                        'distccd.host-{host_arch}.compiler-{compiler_arch}',
+                    )
+                    self.render_template(
+                        self.template_path /
+                        'host/build-context/usr/lib/systemd/system/distccd.service.jinja',
+                        self.out_path / 'host/build-context/usr/lib/systemd/system' /
+                        'distccd.host-{host_arch}.compiler-{compiler_arch}.service',
+                    )
 
 
 # Register supported distributions
@@ -437,46 +499,48 @@ def make_parser():
 
     # list-host-archs
     parser_list_host_archs = subparsers.add_parser('list-host-archs')
-    parser_list_host_archs.add_argument('distro', type=Distro.get)
+    parser_list_host_archs.add_argument('--distro', type=Distro.get, required=True)
 
-    # list-client-archs
-    parser_list_client_archs = subparsers.add_parser('list-client-archs')
-    parser_list_client_archs.add_argument('distro', type=Distro.get)
+    # list-compiler-archs
+    parser_list_compiler_archs = subparsers.add_parser('list-compiler-archs')
+    parser_list_compiler_archs.add_argument('--distro', type=Distro.get, required=True)
 
     # render
     parser_render = subparsers.add_parser('render')
-    parser_render.add_argument('distro', type=Distro.get)
-    parser_render.add_argument('--tag', default='devel')
-
-    # render-all
-    parser_render_all = subparsers.add_parser('render-all')
-    parser_render_all.add_argument('--tag', default='devel')
+    parser_render.add_argument('--tag', required=True)
 
     # build-host
     parser_build_host = subparsers.add_parser('build-host')
-    parser_build_host.add_argument('distro', type=Distro.get)
-    parser_build_host.add_argument('arch')
-    parser_build_host.add_argument('--tag', default='devel')
+    parser_build_host.add_argument('--distro', type=Distro.get, required=True)
+    parser_build_host.add_argument('--host-arch', required=True)
+    parser_build_host.add_argument('--tag', required=True)
+
+    # # push-host
+    # parser_build_host = subparsers.add_parser('push-host')
+    # parser_build_host.add_argument('--distro', type=Distro.get)
+    # parser_build_host.add_argument('--host-arch', required=True)
+    # parser_build_host.add_argument('--tag', required=True)
 
     # build-client
     parser_build_client = subparsers.add_parser('build-client')
-    parser_build_client.add_argument('distro', type=Distro.get)
-    parser_build_client.add_argument('arch')
-    parser_build_client.add_argument('--tag', default='devel')
+    parser_build_client.add_argument('--distro', type=Distro.get, required=True)
+    parser_build_client.add_argument('--host-arch', required=True)
+    parser_build_client.add_argument('--client-arch', required=True)
+    parser_build_client.add_argument('--tag', required=True)
 
     # build-all
     parser_build_all = subparsers.add_parser('build-all')
-    parser_build_all.add_argument('--tag', default='devel')
+    parser_build_all.add_argument('--tag', required=True)
 
     # clean
     subparsers.add_parser('clean')
 
     # test
     parser_test = subparsers.add_parser('test')
-    parser_test.add_argument('distro', type=Distro.get)
-    parser_test.add_argument('host_arch')
-    parser_test.add_argument('client_arch')
-    parser_test.add_argument('--tag', default='devel')
+    parser_test.add_argument('--distro', type=Distro.get, required=True)
+    parser_test.add_argument('--host-arch', required=True)
+    parser_test.add_argument('--client-arch', required=True)
+    parser_test.add_argument('--tag', required=True)
 
     return parser
 
@@ -489,30 +553,33 @@ def main():
     elif args.subcommand == 'list-host-archs':
         print('\n'.join(args.distro.host_archs))
 
-    elif args.subcommand == 'list-client-archs':
-        print('\n'.join(args.distro.client_archs))
+    elif args.subcommand == 'list-compiler-archs':
+        print('\n'.join(args.distro.compiler_archs))
 
     elif args.subcommand == 'render':
-        args.distro.render(tag=args.tag)
-
-    elif args.subcommand == 'render-all':
-        for distro in Distro.registry.values():
-            distro.render(tag=args.tag)
+        Distro.render_all(tag=args.tag)
 
     elif args.subcommand == 'build-host':
-        args.distro.build_host(host_arch=args.arch, tag=args.tag)
+        Distro.render_all(tag=args.tag)
+        args.distro.build_host(args.host_arch, tag=args.tag)
 
     elif args.subcommand == 'build-client':
-        args.distro.build_client(client_arch=args.arch, tag=args.tag)
+        Distro.render_all(tag=args.tag)
+        args.distro.build_client(args.host_arch, args.compiler_arch, tag=args.tag)
 
     elif args.subcommand == 'build-all':
+        Distro.render_all(tag=args.tag)
         Distro.build_all(tag=args.tag)
 
     elif args.subcommand == 'clean':
         Distro.clean_all()
 
     elif args.subcommand == 'test':
-        args.distro.test(host_arch=args.host_arch, client_arch=args.client_arch, tag=args.tag)
+        args.distro.test(args.host_arch, args.compiler_arch)
+
+    # elif args.subcommand == 'test-all':
+    #     with args.distro.set_context(host_arch=args.host_arch, compiler_arch=args.compiler_arch, tag=args.tag):
+    #         args.distro.test()
 
 
 if __name__ == '__main__':

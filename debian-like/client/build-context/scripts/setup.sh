@@ -11,3 +11,6 @@ if [[ ! -f /usr/lib/ccache/cc ]]
 then
   ln -s /usr/bin/ccache /usr/lib/ccache/cc
 fi
+
+# Print ccache config
+ccache -p
