@@ -116,8 +116,6 @@ class Distro(metaclass=abc.ABCMeta):
         prev_context = self._context.copy() if self._context else None
         new_context = self._context.copy() if self._context else {}
         new_context.update(context)
-        if not new_context.get('tag'):
-            raise KeyError('tag not given')
         self._context = self.get_template_context(**new_context)
         try:
             yield
@@ -139,7 +137,7 @@ class Distro(metaclass=abc.ABCMeta):
             print(f'Rendered {template_path} -> {out_path}')
             return out_path
 
-    def flatten_yaml(self, yaml_path):
+    def interpolate_yaml(self, yaml_path):
         with PROJECT_DIR:
             yaml_path = yaml_path.format(**self.context)
             with open(yaml_path, 'r') as f:
@@ -155,7 +153,7 @@ class Distro(metaclass=abc.ABCMeta):
             with open(yaml_path, 'w') as f:
                 f.write(rendered)
 
-            print(f'Flattened {yaml_path}')
+            print(f'Interpolated {yaml_path}')
             return yaml_path
 
     @property
@@ -196,7 +194,7 @@ class Distro(metaclass=abc.ABCMeta):
             self.render_dockerfile_host()
             self.render_dockerfile_client()
             self.render_docker_compose()
-            self.render_github_workflows()
+            self.render_github_actions()
 
             with PROJECT_DIR:
                 for root, _, files in os.walk(self.template_path):
@@ -252,13 +250,14 @@ class Distro(metaclass=abc.ABCMeta):
             self.docker_compose_yml_path,
         )
 
-    def render_github_workflows(self):
-        self.render_template(
-            Path('.github/workflows/build.yml.jinja'),
-            self.github_workflows_yml_path,
-        )
-        # Replace YAML aliases in rendered jinja output
-        self.flatten_yaml(self.github_workflows_yml_path)
+    def render_github_actions(self):
+        with self.set_context():
+            self.render_template(
+                Path('.github/workflows/build.yml.jinja'),
+                self.github_workflows_yml_path,
+            )
+            # Replace YAML aliases in rendered jinja output
+            self.interpolate_yaml(self.github_workflows_yml_path)
 
     def build_host(self, host_arch, tag):
         configure_qemu()
@@ -509,6 +508,9 @@ def make_parser():
     parser_render = subparsers.add_parser('render')
     parser_render.add_argument('--tag', required=True)
 
+    # render
+    subparsers.add_parser('render-github-actions')
+
     # build-host
     parser_build_host = subparsers.add_parser('build-host')
     parser_build_host.add_argument('--distro', type=Distro.get, required=True)
@@ -557,6 +559,10 @@ def main():
 
     elif args.subcommand == 'render':
         Distro.render_all(tag=args.tag)
+
+    elif args.subcommand == 'render-github-actions':
+        for distro in Distro.registry.values():
+            distro.render_github_actions()
 
     elif args.subcommand == 'build-host':
         Distro.render_all(tag=args.tag)

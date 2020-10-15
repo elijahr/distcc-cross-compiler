@@ -1,21 +1,17 @@
 #!/bin/sh
 
-set -uexo pipefail
+set -ueo pipefail
 
 echo "Checking for .github/workflows/build.yml.jinja changes..."
 
 files=( $(git diff-index --cached HEAD --name-only) )
 
-echo ">>>>" >> /tmp/pre-commit
-
 for file in ${files[@]}
 do
-	echo $file >> /tmp/pre-commit
 	if [[ "$file" == ".github/workflows/build.yml.jinja" ]]
 	then
 		echo "Change detected, re-rendering"
-		./builder.py render
+		./builder.py render-github-actions
 		git add .github/workflows || true
 	fi
 done
-echo "<<<<" >> /tmp/pre-commit
