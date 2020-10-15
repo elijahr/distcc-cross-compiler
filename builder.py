@@ -277,11 +277,11 @@ class Distro(metaclass=abc.ABCMeta):
             '--cache-from', image,
         )
 
-    def build_client(self, host_arch, compiler_arch, tag):
+    def build_client(self, client_arch, tag):
         configure_qemu()
 
-        image = f'elijahru/distcc-cross-compiler-client-{slugify(self.name)}:{tag}-{compiler_arch}'
-        dockerfile = self.out_path / f'client/Dockerfile.{compiler_arch}'
+        image = f'elijahru/distcc-cross-compiler-client-{slugify(self.name)}:{tag}-{client_arch}'
+        dockerfile = self.out_path / f'client/Dockerfile.{client_arch}'
         try:
             docker('pull', image)
         except ErrorReturnCode_1:
@@ -524,7 +524,6 @@ def make_parser():
     # build-client
     parser_build_client = subparsers.add_parser('build-client')
     parser_build_client.add_argument('--distro', type=Distro.get, required=True)
-    parser_build_client.add_argument('--host-arch', required=True)
     parser_build_client.add_argument('--client-arch', required=True)
     parser_build_client.add_argument('--tag', required=True)
 
@@ -565,7 +564,7 @@ def main():
 
     elif args.subcommand == 'build-client':
         Distro.render_all(tag=args.tag)
-        args.distro.build_client(args.host_arch, args.compiler_arch, tag=args.tag)
+        args.distro.build_client(args.client_arch, tag=args.tag)
 
     elif args.subcommand == 'build-all':
         Distro.render_all(tag=args.tag)
@@ -575,10 +574,10 @@ def main():
         Distro.clean_all()
 
     elif args.subcommand == 'test':
-        args.distro.test(args.host_arch, args.compiler_arch)
+        args.distro.test(args.host_arch, args.client_arch)
 
     # elif args.subcommand == 'test-all':
-    #     with args.distro.set_context(host_arch=args.host_arch, compiler_arch=args.compiler_arch, tag=args.tag):
+    #     with args.distro.set_context(host_arch=args.host_arch, compiler_arch=args.client_arch, tag=args.tag):
     #         args.distro.test()
 
 

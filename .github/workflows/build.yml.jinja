@@ -16,7 +16,7 @@ _anchors:
   install_pip_requirements: &install_pip_requirements
     name: Install pip requirements
     run: |
-      pip install -r requirements.txt
+      pip3 install -r requirements.txt
 
 name: Build {{ distro }} images
 
@@ -41,13 +41,13 @@ jobs:
           ./builder.py build-host \
             --distro {{ distro }} \
             --host-arch {{ host_arch }} \
-            --tag $(basename ${{ github.event.ref }})
+            --tag $(basename {% raw %}${{ github.event.ref }}{% endraw %})
 
   build-{{ host_arch }}-clients:
     name: |
       Build {{ distro_slug }} client {% raw %}${{ matrix.compiler_arch }}{% endraw %} (host: {{ host_arch }})
     runs-on: ubuntu-latest
-    depends-on: build-{{ host_arch }}-host
+    needs: build-{{ host_arch }}-host
 
     strategy:
       matrix:
@@ -64,9 +64,8 @@ jobs:
         run: |
           ./builder.py build-client \
             --distro {{ distro }} \
-            --host-arch {{ host_arch }} \
             --client-arch {% raw %}${{ matrix.compiler_arch }}{% endraw %} \
-            --tag $(basename ${{ github.event.ref }})
+            --tag $(basename {% raw %}${{ github.event.ref }}{% endraw %})
 
       - name: Run tests
         run: |
@@ -74,11 +73,11 @@ jobs:
             --distro {{ distro }} \
             --host-arch {{ host_arch }} \
             --client-arch {% raw %}${{ matrix.compiler_arch }}{% endraw %} \
-            --tag $(basename ${{ github.event.ref }})
+            --tag $(basename {% raw %}${{ github.event.ref }}{% endraw %})
 
   {% endfor %}
 
-  push_manifests:
+  {# push_manifests:
     name: Push manifests
     if: {% raw %}${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/') }}{% endraw %}
 
@@ -99,4 +98,4 @@ jobs:
           docker images
           ./scripts/push-manifests-debian.sh \
             $(basename {% raw %}${{ matrix.version }}{% endraw %}) \
-            debian-buster
+            debian-buster #}
