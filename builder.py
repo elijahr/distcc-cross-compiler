@@ -158,7 +158,7 @@ class Distro(metaclass=abc.ABCMeta):
 
     @property
     def docker_compose_yml_path(self):
-        return self.out_path / f'docker-compose.{slugify(self.name)}.yml'
+        return self.out_path / f'docker-compose.yml'
 
     @property
     def github_workflows_yml_path(self):
@@ -581,6 +581,7 @@ def main():
         Distro.clean_all()
 
     elif args.subcommand == 'test':
+        Distro.render_all(tag=args.tag)
         args.distro.test(args.host_arch, args.client_arch)
 
     # elif args.subcommand == 'test-all':
