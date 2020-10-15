@@ -18,6 +18,12 @@ _anchors:
     run: |
       pip3 install -r requirements.txt
 
+  dockerhub_login: &dockerhub_login
+    name: Login to Docker Hub
+    run: |
+      echo {% raw %}${{ secrets.DOCKERHUB_TOKEN }}{% endraw %} | docker login \
+        -u elijahru --password-stdin
+
 name: {{ distro }}
 
 on:
@@ -36,12 +42,14 @@ jobs:
       - *checkout_repo
       - *install_emulation_deps
       - *install_pip_requirements
+      - *dockerhub_login
       - name: Build host image
         run: |
           ./builder.py build-host \
             --distro {{ distro }} \
             --host-arch {{ host_arch }} \
-            --tag $(basename {% raw %}${{ github.event.ref }}{% endraw %})
+            --tag $(basename {% raw %}${{ github.event.ref }}{% endraw %}) \
+            --push
   {% endfor %}
 
   {% for compiler_arch in compiler_archs %}
@@ -54,12 +62,14 @@ jobs:
       - *checkout_repo
       - *install_emulation_deps
       - *install_pip_requirements
+      - *dockerhub_login
       - name: Build client image
         run: |
           ./builder.py build-client \
             --distro {{ distro }} \
             --client-arch {{ compiler_arch }} \
-            --tag $(basename {% raw %}${{ github.event.ref }}{% endraw %})
+            --tag $(basename {% raw %}${{ github.event.ref }}{% endraw %}) \
+            --push
   {% endfor %}
 
   {% for host_arch in host_archs %}

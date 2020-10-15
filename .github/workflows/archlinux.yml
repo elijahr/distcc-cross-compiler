@@ -30,12 +30,18 @@ jobs:
       run: |
         pip3 install -r requirements.txt
 
+    - name: Login to Docker Hub
+      run: |
+        echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login \
+          -u elijahru --password-stdin
+
     - name: Build host image
       run: |
         ./builder.py build-host \
           --distro archlinux \
           --host-arch amd64 \
-          --tag $(basename ${{ github.event.ref }})
+          --tag $(basename ${{ github.event.ref }}) \
+          --push
 
 
 
@@ -61,12 +67,18 @@ jobs:
       run: |
         pip3 install -r requirements.txt
 
+    - name: Login to Docker Hub
+      run: |
+        echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login \
+          -u elijahru --password-stdin
+
     - name: Build client image
       run: |
         ./builder.py build-client \
           --distro archlinux \
           --client-arch amd64 \
-          --tag $(basename ${{ github.event.ref }})
+          --tag $(basename ${{ github.event.ref }}) \
+          --push
 
   build-client-arm32v5:
     name: |
@@ -90,12 +102,18 @@ jobs:
       run: |
         pip3 install -r requirements.txt
 
+    - name: Login to Docker Hub
+      run: |
+        echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login \
+          -u elijahru --password-stdin
+
     - name: Build client image
       run: |
         ./builder.py build-client \
           --distro archlinux \
           --client-arch arm32v5 \
-          --tag $(basename ${{ github.event.ref }})
+          --tag $(basename ${{ github.event.ref }}) \
+          --push
 
   build-client-arm32v6:
     name: |
@@ -119,12 +137,18 @@ jobs:
       run: |
         pip3 install -r requirements.txt
 
+    - name: Login to Docker Hub
+      run: |
+        echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login \
+          -u elijahru --password-stdin
+
     - name: Build client image
       run: |
         ./builder.py build-client \
           --distro archlinux \
           --client-arch arm32v6 \
-          --tag $(basename ${{ github.event.ref }})
+          --tag $(basename ${{ github.event.ref }}) \
+          --push
 
   build-client-arm32v7:
     name: |
@@ -148,12 +172,18 @@ jobs:
       run: |
         pip3 install -r requirements.txt
 
+    - name: Login to Docker Hub
+      run: |
+        echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login \
+          -u elijahru --password-stdin
+
     - name: Build client image
       run: |
         ./builder.py build-client \
           --distro archlinux \
           --client-arch arm32v7 \
-          --tag $(basename ${{ github.event.ref }})
+          --tag $(basename ${{ github.event.ref }}) \
+          --push
 
   build-client-arm64v8:
     name: |
@@ -177,12 +207,18 @@ jobs:
       run: |
         pip3 install -r requirements.txt
 
+    - name: Login to Docker Hub
+      run: |
+        echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login \
+          -u elijahru --password-stdin
+
     - name: Build client image
       run: |
         ./builder.py build-client \
           --distro archlinux \
           --client-arch arm64v8 \
-          --tag $(basename ${{ github.event.ref }})
+          --tag $(basename ${{ github.event.ref }}) \
+          --push
 
 
 

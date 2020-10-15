@@ -98,12 +98,12 @@ class Distro(metaclass=abc.ABCMeta):
             distro.render(**context)
 
     @classmethod
-    def build_all(cls, tag):
+    def build_all(cls, tag, push=False):
         for distro in cls.registry.values():
             for host_arch in distro.host_archs:
-                distro.build_host(host_arch, tag=tag)
+                distro.build_host(host_arch, tag=tag, push=push)
                 for compiler_arch in distro.compiler_archs_by_host_arch[host_arch]:
-                    distro.build_client(host_arch, compiler_arch, tag=tag)
+                    distro.build_client(host_arch, compiler_arch, tag=tag, push=push)
 
     @property
     def context(self):
@@ -259,7 +259,7 @@ class Distro(metaclass=abc.ABCMeta):
             # Replace YAML aliases in rendered jinja output
             self.interpolate_yaml(self.github_workflows_yml_path)
 
-    def build_host(self, host_arch, tag):
+    def build_host(self, host_arch, tag, push=False):
         configure_qemu()
 
         image = f'elijahru/distcc-cross-compiler-host-{slugify(self.name)}:{tag}-{host_arch}'
@@ -275,8 +275,10 @@ class Distro(metaclass=abc.ABCMeta):
             '--tag', image,
             '--cache-from', image,
         )
+        if push:
+            docker('push', image)
 
-    def build_client(self, client_arch, tag):
+    def build_client(self, client_arch, tag, push=False):
         configure_qemu()
 
         image = f'elijahru/distcc-cross-compiler-client-{slugify(self.name)}:{tag}-{client_arch}'
@@ -292,6 +294,8 @@ class Distro(metaclass=abc.ABCMeta):
             '--tag', image,
             '--cache-from', image,
         )
+        if push:
+            docker('push', image)
 
     @contextlib.contextmanager
     def run_host(self, host_arch):
@@ -516,22 +520,19 @@ def make_parser():
     parser_build_host.add_argument('--distro', type=Distro.get, required=True)
     parser_build_host.add_argument('--host-arch', required=True)
     parser_build_host.add_argument('--tag', required=True)
-
-    # # push-host
-    # parser_build_host = subparsers.add_parser('push-host')
-    # parser_build_host.add_argument('--distro', type=Distro.get)
-    # parser_build_host.add_argument('--host-arch', required=True)
-    # parser_build_host.add_argument('--tag', required=True)
+    parser_build_host.add_argument('--push', action='store_true')
 
     # build-client
     parser_build_client = subparsers.add_parser('build-client')
     parser_build_client.add_argument('--distro', type=Distro.get, required=True)
     parser_build_client.add_argument('--client-arch', required=True)
     parser_build_client.add_argument('--tag', required=True)
+    parser_build_client.add_argument('--push', action='store_true')
 
     # build-all
     parser_build_all = subparsers.add_parser('build-all')
     parser_build_all.add_argument('--tag', required=True)
+    parser_build_all.add_argument('--push', action='store_true')
 
     # clean
     subparsers.add_parser('clean')
@@ -566,15 +567,15 @@ def main():
 
     elif args.subcommand == 'build-host':
         Distro.render_all(tag=args.tag)
-        args.distro.build_host(args.host_arch, tag=args.tag)
+        args.distro.build_host(args.host_arch, tag=args.tag, push=args.push)
 
     elif args.subcommand == 'build-client':
         Distro.render_all(tag=args.tag)
-        args.distro.build_client(args.client_arch, tag=args.tag)
+        args.distro.build_client(args.client_arch, tag=args.tag, push=args.push)
 
     elif args.subcommand == 'build-all':
         Distro.render_all(tag=args.tag)
-        Distro.build_all(tag=args.tag)
+        Distro.build_all(tag=args.tag, push=args.push)
 
     elif args.subcommand == 'clean':
         Distro.clean_all()
