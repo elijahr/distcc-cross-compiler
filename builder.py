@@ -324,17 +324,6 @@ class Distro(metaclass=abc.ABCMeta):
         with self.run_host(host_arch):
             docker_compose('-f', self.docker_compose_yml_path, 'run', f'client-{compiler_arch}')
 
-        # Get logs from most recent host run
-        logs = docker_compose('-f', self.docker_compose_yml_path, 'logs', f'host-{host_arch}', _out=None, _err=None)\
-            .split('Starting distccd daemons')[-1]
-
-        # Strip ANSI escape codes
-        logs = re.sub(r'\x1b[^m]*m', '', logs)
-
-    #    assert len(re.findall(r'distccd\[[0-9]+\] .* COMPILE_OK .* cJSON.c', logs)) == 3
-    #    assert len(re.findall(r'distccd\[[0-9]+\] .* COMPILE_OK .* cJSON_Utils.c', logs)) == 3
-        print('OK')
-
 
 class DebianLike(Distro):
     template_path = Path('debian-like')

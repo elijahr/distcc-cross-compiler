@@ -21,15 +21,11 @@ main () {
   tar xzf cJSON-master.tar.gz -C /tmp/cJSON
   cd /tmp/cJSON/cJSON-master
 
-  # Compile cJSON 3x.
-  # The first compile will use distcc,
-  # the subsequent compiles will use ccached object files from the first compile.
-  for i in $(seq 1 3)
-  do
-    make clean
-    make test
-    sleep 3
-  done
+  # Compile cJSON twice
+  make clean
+  make test
+  make clean
+  make test
 }
 
 main
