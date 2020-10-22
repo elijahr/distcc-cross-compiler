@@ -96,25 +96,36 @@ jobs:
   {% endfor %}
   {% endfor %}
 
-  {# push_manifests:
+  push_manifests:
     name: Push manifests
     if: {% raw %}${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/') }}{% endraw %}
 
     runs-on: ubuntu-latest
-    needs: build
+    needs:
+      {% for host_arch in host_archs %}
+      {% for compiler_arch in host_arch|compiler_archs %}
+      - run-tests-{{ host_arch }}-{{ compiler_arch }}
+      {% endfor %}
+      {% endfor %}
 
     strategy:
       matrix:
-        version: [ latest, '{% raw %}${{ github.ref }}{% endraw %}' ]
+        include:
+          - version: latest
+          - version: '{% raw %}${{ github.ref }}{% endraw %}'
 
     steps:
       - *checkout_repo
-
-      - name: Push manifest
+      - *install_pip_requirements
+      - *dockerhub_login
+      - name: Push host manifest
         run: |
-          echo {% raw %}${{ secrets.DOCKERHUB_TOKEN }}{% endraw %} | docker login \
-            -u elijahru --password-stdin
-          docker images
-          ./scripts/push-manifests-debian.sh \
-            $(basename {% raw %}${{ matrix.version }}{% endraw %}) \
-            debian-buster #}
+          ./builder.py push-host-manifest \
+            --distro {{ distro }} \
+            --tag $(basename {% raw %}${{ matrix.version }}{% endraw %})
+
+      - name: Push client manifest
+        run: |
+          ./builder.py push-client-manifest \
+            --distro {{ distro }} \
+            --tag $(basename {% raw %}${{ matrix.version }}{% endraw %})

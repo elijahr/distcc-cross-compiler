@@ -30,8 +30,8 @@ from sh import ErrorReturnCode_1  # pylint: disable=no-name-in-module
 from sh import which  # pylint: disable=no-name-in-module
 
 
-docker = functools.partial(_docker,  _out=sys.stdout, _err=sys.stderr)
-docker_compose = functools.partial(_docker_compose,  _out=sys.stdout, _err=sys.stderr)
+docker = functools.partial(_docker, _out=sys.stdout, _err=sys.stderr)
+docker_compose = functools.partial(_docker_compose, _out=sys.stdout, _err=sys.stderr)
 
 PROJECT_DIR = Path(os.path.dirname(__file__))
 
@@ -43,19 +43,38 @@ class Dumper(yaml.RoundTripDumper):
 
 
 def slugify(string):
-    return re.sub(r'[^\w]', '-', string).lower()
+    return re.sub(r"[^\w]", "-", string).lower()
+
+
+docker_manifest_args = {
+    "amd64": ["--arch", "amd64"],
+    "i386": ["--arch", "386"],
+    "arm32v5": ["--arch", "arm", "--variant", "v5"],
+    "arm32v6": ["--arch", "arm", "--variant", "v6"],
+    "arm32v7": ["--arch", "arm", "--variant", "v7"],
+    "arm64v8": ["--arch", "arm64", "--variant", "v8"],
+    "ppc64le": ["--arch", "ppc64le"],
+    "s390x": ["--arch", "s390x"],
+}
 
 
 def configure_qemu():
-    if not which('qemu-aarch64'):
+    if not which("qemu-aarch64"):
         raise RuntimeError(
-            'QEMU not installed, install missing package (apt: qemu,qemu-user-static | pacman: qemu-headless,qemu-headless-arch-extra | brew: qemu).')
+            "QEMU not installed, install missing package (apt: qemu,qemu-user-static | pacman: qemu-headless,qemu-headless-arch-extra | brew: qemu)."
+        )
 
-    images = docker('images', '--format',
-                    '{{ .Repository }}', _out=None, _err=None)
-    if 'multiarch/qemu-user-static' not in images:
-        docker('run', '--rm', '--privileged',
-               'multiarch/qemu-user-static', '--reset', '-p', 'yes')
+    images = docker("images", "--format", "{{ .Repository }}", _out=None, _err=None)
+    if "multiarch/qemu-user-static" not in images:
+        docker(
+            "run",
+            "--rm",
+            "--privileged",
+            "multiarch/qemu-user-static",
+            "--reset",
+            "-p",
+            "yes",
+        )
 
 
 class Distro(metaclass=abc.ABCMeta):
@@ -72,19 +91,20 @@ class Distro(metaclass=abc.ABCMeta):
         self.registry[name] = self
         self._context = None
         self.env = Environment(autoescape=False, undefined=StrictUndefined)
-        self.env.filters['compiler_archs'] = self.compiler_archs_by_host_arch.get
-        self.env.filters['compiler_port'] = self.ports_by_arch.get
-        self.env.filters['toolchain'] = self.toolchains_by_arch.get
-        self.env.filters['compiler_path_part'] = self.get_compiler_path_part
+        self.env.filters["compiler_archs"] = self.compiler_archs_by_host_arch.get
+        self.env.filters["compiler_port"] = self.ports_by_arch.get
+        self.env.filters["toolchain"] = self.toolchains_by_arch.get
+        self.env.filters["compiler_path_part"] = self.get_compiler_path_part
 
     def __repr__(self):
-        return f'{self.__class__.__name__}({repr(self.name)})'
+        return f"{self.__class__.__name__}({repr(self.name)})"
 
     @classmethod
     def get(cls, name):
         if name not in cls.registry:
             raise ValueError(
-                f'Unsupported distro {name}, choose from {", ".join(cls.registry.keys())}')
+                f'Unsupported distro {name}, choose from {", ".join(cls.registry.keys())}'
+            )
         return cls.registry[name]
 
     @classmethod
@@ -108,7 +128,7 @@ class Distro(metaclass=abc.ABCMeta):
     @property
     def context(self):
         if self._context is None:
-            raise RuntimeError('Distro context not entered')
+            raise RuntimeError("Distro context not entered")
         return self._context
 
     @contextlib.contextmanager
@@ -125,49 +145,49 @@ class Distro(metaclass=abc.ABCMeta):
     def render_template(self, template_path, out_path):
         with PROJECT_DIR:
             template_path = template_path.format(**self.context)
-            with open(template_path, 'r') as f:
+            with open(template_path, "r") as f:
                 rendered = self.env.from_string(f.read()).render(**self.context)
             out_path = out_path.format(**self.context)
             dir_name = os.path.dirname(out_path)
             if not os.path.exists(dir_name):
                 os.makedirs(dir_name)
-            rendered = f'# Rendered from {template_path}\n\n' + rendered
-            with open(out_path, 'w') as f:
+            rendered = f"# Rendered from {template_path}\n\n" + rendered
+            with open(out_path, "w") as f:
                 f.write(rendered)
-            print(f'Rendered {template_path} -> {out_path}')
+            print(f"Rendered {template_path} -> {out_path}")
             return out_path
 
     def interpolate_yaml(self, yaml_path):
         with PROJECT_DIR:
             yaml_path = yaml_path.format(**self.context)
-            with open(yaml_path, 'r') as f:
+            with open(yaml_path, "r") as f:
                 rendered = yaml.load(f, Loader=yaml.RoundTripLoader)
 
             # Remove _anchors section
-            if '_anchors' in rendered:
-                del rendered['_anchors']
+            if "_anchors" in rendered:
+                del rendered["_anchors"]
 
             # Use custom Dumper that replaces aliases with referenced content
             rendered = yaml.dump(rendered, Dumper=Dumper)
 
-            with open(yaml_path, 'w') as f:
+            with open(yaml_path, "w") as f:
                 f.write(rendered)
 
-            print(f'Interpolated {yaml_path}')
+            print(f"Interpolated {yaml_path}")
             return yaml_path
 
     @property
     def docker_compose_yml_path(self):
-        return self.out_path / f'docker-compose.yml'
+        return self.out_path / f"docker-compose.yml"
 
     @property
     def github_actions_yml_path(self):
-        return Path(f'.github/workflows/{slugify(self.name)}.yml')
+        return Path(f".github/workflows/{slugify(self.name)}.yml")
 
     def clean(self):
         if os.path.exists(self.out_path):
             shutil.rmtree(self.out_path)
-            print(f'Removed {self.out_path}')
+            print(f"Removed {self.out_path}")
 
     @property
     def out_path(self):
@@ -178,12 +198,14 @@ class Distro(metaclass=abc.ABCMeta):
         ...
 
     def get_template_context(self, **context):
-        context.update(dict(
-            distro=self.name,
-            distro_slug=slugify(self.name),
-            host_archs=self.host_archs,
-            compiler_archs=self.compiler_archs,
-        ))
+        context.update(
+            dict(
+                distro=self.name,
+                distro_slug=slugify(self.name),
+                host_archs=self.host_archs,
+                compiler_archs=self.compiler_archs,
+            )
+        )
         return context
 
     def render(self, **context):
@@ -198,37 +220,47 @@ class Distro(metaclass=abc.ABCMeta):
                     root = Path(root)
                     new_root = Path(root.replace(self.template_path, self.out_path))
                     for f in files:
-                        if '.jinja' in f:
+                        if ".jinja" in f:
                             continue
                         if not os.path.exists(os.path.dirname(new_root / f)):
                             os.makedirs(os.path.dirname(new_root / f))
                         shutil.copyfile(root / f, new_root / f)
-                        print(f'Copied {root / f} -> {new_root / f}')
+                        print(f"Copied {root / f} -> {new_root / f}")
 
-                for root, _, files in os.walk(Path('shared-build-context') / 'host'):
+                for root, _, files in os.walk(Path("shared-build-context") / "host"):
                     root = Path(root)
-                    new_root = Path(root.replace('shared-build-context/host', self.out_path / 'host/build-context'))
+                    new_root = Path(
+                        root.replace(
+                            "shared-build-context/host",
+                            self.out_path / "host/build-context",
+                        )
+                    )
                     for f in files:
                         if not os.path.exists(os.path.dirname(new_root / f)):
                             os.makedirs(os.path.dirname(new_root / f))
                         shutil.copyfile(root / f, new_root / f)
-                        print(f'Copied {root / f} -> {new_root / f}')
+                        print(f"Copied {root / f} -> {new_root / f}")
 
-                for root, _, files in os.walk(Path('shared-build-context') / 'client'):
+                for root, _, files in os.walk(Path("shared-build-context") / "client"):
                     root = Path(root)
-                    new_root = Path(root.replace('shared-build-context/client', self.out_path / 'client/build-context'))
+                    new_root = Path(
+                        root.replace(
+                            "shared-build-context/client",
+                            self.out_path / "client/build-context",
+                        )
+                    )
                     for f in files:
                         if not os.path.exists(os.path.dirname(new_root / f)):
                             os.makedirs(os.path.dirname(new_root / f))
                         shutil.copyfile(root / f, new_root / f)
-                        print(f'Copied {root / f} -> {new_root / f}')
+                        print(f"Copied {root / f} -> {new_root / f}")
 
     def render_dockerfile_host(self):
         for host_arch in self.host_archs:
             with self.set_context(host_arch=host_arch):
                 self.render_template(
-                    self.template_path / 'host/Dockerfile.jinja',
-                    self.out_path / 'host' / 'Dockerfile.{host_arch}',
+                    self.template_path / "host/Dockerfile.jinja",
+                    self.out_path / "host" / "Dockerfile.{host_arch}",
                 )
 
     def render_dockerfile_client(self):
@@ -236,21 +268,20 @@ class Distro(metaclass=abc.ABCMeta):
             for compiler_arch in self.compiler_archs_by_host_arch[host_arch]:
                 with self.set_context(host_arch=host_arch, compiler_arch=compiler_arch):
                     self.render_template(
-                        self.template_path / 'client/Dockerfile.jinja',
-                        self.out_path / 'client' /
-                        'Dockerfile.{compiler_arch}',
+                        self.template_path / "client/Dockerfile.jinja",
+                        self.out_path / "client" / "Dockerfile.{compiler_arch}",
                     )
 
     def render_docker_compose(self):
         self.render_template(
-            self.template_path / 'docker-compose.yml.jinja',
+            self.template_path / "docker-compose.yml.jinja",
             self.docker_compose_yml_path,
         )
 
     def render_github_actions(self):
         with self.set_context():
             self.render_template(
-                Path('.github/workflows/build.yml.jinja'),
+                Path(".github/workflows/build.yml.jinja"),
                 self.github_actions_yml_path,
             )
             # Replace YAML aliases in rendered jinja output
@@ -261,131 +292,204 @@ class Distro(metaclass=abc.ABCMeta):
 
         self.render(tag=tag)
 
-        image = f'elijahru/distcc-cross-compiler-host-{slugify(self.name)}:{tag}-{host_arch}'
-        dockerfile = self.out_path / f'host/Dockerfile.{host_arch}'
+        image = f"elijahru/distcc-cross-compiler-host-{slugify(self.name)}:{tag}-{host_arch}"
+        dockerfile = self.out_path / f"host/Dockerfile.{host_arch}"
         try:
-            docker('pull', image)
+            docker("pull", image)
         except ErrorReturnCode_1:
             pass
         docker(
-            'build',
-            self.out_path / 'host/build-context',
-            '--file', dockerfile,
-            '--tag', image,
-            '--cache-from', image,
+            "build",
+            self.out_path / "host/build-context",
+            "--file",
+            dockerfile,
+            "--tag",
+            image,
+            "--cache-from",
+            image,
         )
         if push:
-            docker('push', image)
+            docker("push", image)
 
     def build_client(self, client_arch, tag, push=False):
         configure_qemu()
 
         self.render(tag=tag)
 
-        image = f'elijahru/distcc-cross-compiler-client-{slugify(self.name)}:{tag}-{client_arch}'
-        dockerfile = self.out_path / f'client/Dockerfile.{client_arch}'
+        image = f"elijahru/distcc-cross-compiler-client-{slugify(self.name)}:{tag}-{client_arch}"
+        dockerfile = self.out_path / f"client/Dockerfile.{client_arch}"
         try:
-            docker('pull', image)
+            docker("pull", image)
         except ErrorReturnCode_1:
             pass
         docker(
-            'build',
-            self.out_path / 'client/build-context',
-            '--file', dockerfile,
-            '--tag', image,
-            '--cache-from', image,
+            "build",
+            self.out_path / "client/build-context",
+            "--file",
+            dockerfile,
+            "--tag",
+            image,
+            "--cache-from",
+            image,
         )
         if push:
-            docker('push', image)
+            docker("push", image)
+
+    def push_host_manifest(self, tag):
+        os.environ["DOCKER_CLI_EXPERIMENTAL"] = "enabled"
+        manifest = f"elijahru/distcc-cross-compiler-host-{slugify(self.name)}:{tag}"
+        images = [f"{manifest}-{host_arch}" for host_arch in self.host_archs]
+
+        for image in images:
+            try:
+                docker("pull", image)
+            except ErrorReturnCode_1:
+                pass
+
+        try:
+            docker("manifest", "create", "--amend", manifest, *images)
+        except ErrorReturnCode_1:
+            docker("manifest", "create", manifest, *images)
+
+        for host_arch in self.host_archs:
+            docker(
+                "manifest",
+                "annotate",
+                manifest,
+                f"{manifest}-{host_arch}",
+                "--os",
+                "linux",
+                *docker_manifest_args[host_arch],
+            )
+
+        docker("manifest", "push", manifest)
+
+    def push_client_manifest(self, tag):
+        os.environ["DOCKER_CLI_EXPERIMENTAL"] = "enabled"
+        manifest = f"elijahru/distcc-cross-compiler-client-{slugify(self.name)}:{tag}"
+        images = [
+            f"{manifest}-{compiler_arch}" for compiler_arch in self.compiler_archs
+        ]
+
+        for image in images:
+            try:
+                docker("pull", image)
+            except ErrorReturnCode_1:
+                pass
+
+        try:
+            docker("manifest", "create", "--amend", manifest, *images)
+        except ErrorReturnCode_1:
+            docker("manifest", "create", manifest, *images)
+
+        for compiler_arch in self.compiler_archs:
+            docker(
+                "manifest",
+                "annotate",
+                manifest,
+                f"{manifest}-{compiler_arch}",
+                "--os",
+                "linux",
+                *docker_manifest_args[compiler_arch],
+            )
+
+        docker("manifest", "push", manifest)
 
     @contextlib.contextmanager
     def run_host(self, host_arch):
         image_id = lambda: docker(
-            'ps',
-            '--filter', f'name=host-{host_arch}',
-            '--format', '{{.ID}}',
-            _out=None, _err=None,
+            "ps",
+            "--filter",
+            f"name=host-{host_arch}",
+            "--format",
+            "{{.ID}}",
+            _out=None,
+            _err=None,
         ).strip()
         id = image_id()
         if id:
-            docker('kill', id, _out=None, _err=None)
-        docker_compose('-f', self.docker_compose_yml_path, 'up', '-d', f'host-{host_arch}')
+            docker("kill", id, _out=None, _err=None)
+        docker_compose(
+            "-f", self.docker_compose_yml_path, "up", "-d", f"host-{host_arch}"
+        )
         time.sleep(5)
         try:
             yield
         finally:
             id = image_id()
             if id:
-                docker('kill', id, _out=None, _err=None)
+                docker("kill", id, _out=None, _err=None)
 
     def test(self, host_arch, compiler_arch, tag):
         self.render(tag=tag)
 
         with self.run_host(host_arch):
-            docker_compose('-f', self.docker_compose_yml_path, 'run', f'client-{compiler_arch}')
+            docker_compose(
+                "-f", self.docker_compose_yml_path, "run", f"client-{compiler_arch}"
+            )
 
 
 class DebianLike(Distro):
-    template_path = Path('debian-like')
+    template_path = Path("debian-like")
 
-    host_archs = ('amd64', 'i386', 'arm32v7', 'arm64v8', 'ppc64le', 's390x')
-    compiler_archs = ('amd64', 'i386', 'arm32v7', 'arm64v8', 'ppc64le', 's390x')
+    host_archs = ("amd64", "i386", "arm32v7", "arm64v8", "ppc64le", "s390x")
+    compiler_archs = ("amd64", "i386", "arm32v7", "arm64v8", "ppc64le", "s390x")
     compiler_archs_by_host_arch = {
-        'amd64': ('amd64', 'i386', 'arm32v7', 'arm64v8', 'ppc64le', 's390x'),
-        'i386': ('amd64', 'i386', 'arm64v8', 'ppc64le'),
-        'arm32v7': ('arm32v7', ),
-        'arm64v8': ('amd64', 'i386', 'arm64v8'),
-        'ppc64le': ('amd64', 'i386', 'arm64v8', 'ppc64le'),
-        's390x': ('s390x', ),
+        "amd64": ("amd64", "i386", "arm32v7", "arm64v8", "ppc64le", "s390x"),
+        "i386": ("amd64", "i386", "arm64v8", "ppc64le"),
+        "arm32v7": ("arm32v7",),
+        "arm64v8": ("amd64", "i386", "arm64v8"),
+        "ppc64le": ("amd64", "i386", "arm64v8", "ppc64le"),
+        "s390x": ("s390x",),
     }
     packages_by_arch = {
-        'amd64': 'gcc-x86-64-linux-gnu g++-x86-64-linux-gnu binutils-x86-64-linux-gnu',
-        'i386': 'gcc-i686-linux-gnu g++-i686-linux-gnu binutils-i686-linux-gnu',
-        'arm32v7': 'gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf binutils-arm-linux-gnueabihf',
-        'arm64v8': 'gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu',
-        'ppc64le': 'gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu binutils-powerpc64le-linux-gnu',
-        's390x': 'gcc-s390x-linux-gnu g++-s390x-linux-gnu binutils-s390x-linux-gnu',
+        "amd64": "gcc-x86-64-linux-gnu g++-x86-64-linux-gnu binutils-x86-64-linux-gnu",
+        "i386": "gcc-i686-linux-gnu g++-i686-linux-gnu binutils-i686-linux-gnu",
+        "arm32v7": "gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf binutils-arm-linux-gnueabihf",
+        "arm64v8": "gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu",
+        "ppc64le": "gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu binutils-powerpc64le-linux-gnu",
+        "s390x": "gcc-s390x-linux-gnu g++-s390x-linux-gnu binutils-s390x-linux-gnu",
     }
     ports_by_arch = {
-        'i386': 3603,
-        'amd64': 3604,
-        'arm32v7': 3607,
-        'arm64v8': 3608,
-        's390x': 3609,
-        'ppc64le': 3610,
+        "i386": 3603,
+        "amd64": 3604,
+        "arm32v7": 3607,
+        "arm64v8": 3608,
+        "s390x": 3609,
+        "ppc64le": 3610,
     }
     toolchains_by_arch = {
-        'amd64': 'x86_64-linux-gnu',
-        'i386': 'i686-linux-gnu',
-        'ppc64le': 'powerpc64le-linux-gnu',
-        's390x': 's390x-linux-gnu',
-        'arm32v7': 'arm-linux-gnueabihf',
-        'arm64v8': 'aarch64-linux-gnu',
+        "amd64": "x86_64-linux-gnu",
+        "i386": "i686-linux-gnu",
+        "ppc64le": "powerpc64le-linux-gnu",
+        "s390x": "s390x-linux-gnu",
+        "arm32v7": "arm-linux-gnueabihf",
+        "arm64v8": "aarch64-linux-gnu",
     }
     flags_by_arch = {
-        'amd64': 'START_DISTCC_X86_64_LINUX_GNU',
-        'i386': 'START_DISTCC_I686_LINUX_GNU',
-        'ppc64le': 'START_DISTCC_PPC64LE_LINUX_GNU',
-        's390x': 'START_DISTCC_S390X_LINUX_GNU',
-        'arm32v7': 'START_DISTCC_ARM_LINUX_GNUEABIHF',
-        'arm64v8': 'START_DISTCC_AARCH64_LINUX_GNU',
+        "amd64": "START_DISTCC_X86_64_LINUX_GNU",
+        "i386": "START_DISTCC_I686_LINUX_GNU",
+        "ppc64le": "START_DISTCC_PPC64LE_LINUX_GNU",
+        "s390x": "START_DISTCC_S390X_LINUX_GNU",
+        "arm32v7": "START_DISTCC_ARM_LINUX_GNUEABIHF",
+        "arm64v8": "START_DISTCC_AARCH64_LINUX_GNU",
     }
 
     def __init__(self, name):
         super(DebianLike, self).__init__(name)
-        self.env.filters['flag'] = self.flags_by_arch.get
-        self.env.filters['apt_packages'] = self.get_apt_packages
+        self.env.filters["flag"] = self.flags_by_arch.get
+        self.env.filters["apt_packages"] = self.get_apt_packages
 
     def get_apt_packages(self, host_arch):
-        packages = 'build-essential g++ distcc lsb-base'
+        packages = "build-essential g++ distcc lsb-base"
         for compiler_arch in self.compiler_archs_by_host_arch[host_arch]:
-            packages += f' {self.packages_by_arch[compiler_arch]}'
+            packages += f" {self.packages_by_arch[compiler_arch]}"
         return packages
 
     def get_compiler_path_part(self, compiler_arch):
-        if self.context['host_arch'] == compiler_arch:
-            return ''
-        return Path('/usr/local/') / self.toolchains_by_arch[compiler_arch] / 'bin:'
+        if self.context["host_arch"] == compiler_arch:
+            return ""
+        return Path("/usr/local/") / self.toolchains_by_arch[compiler_arch] / "bin:"
 
     def render(self, **context):
         with self.set_context(**context):
@@ -397,62 +501,77 @@ class DebianLike(Distro):
             for compiler_arch in self.compiler_archs_by_host_arch[host_arch]:
                 with self.set_context(host_arch=host_arch, compiler_arch=compiler_arch):
                     self.render_template(
-                        self.template_path /
-                        'host/build-context/etc/default/distccd.jinja',
-                        self.out_path / 'host/build-context/etc/default' /
-                        'distccd.host-{host_arch}.compiler-{compiler_arch}',
+                        self.template_path
+                        / "host/build-context/etc/default/distccd.jinja",
+                        self.out_path
+                        / "host/build-context/etc/default"
+                        / "distccd.host-{host_arch}.compiler-{compiler_arch}",
                     )
                     self.render_template(
-                        self.template_path /
-                        'host/build-context/etc/init.d/distccd.jinja',
-                        self.out_path / 'host/build-context/etc/init.d' /
-                        'distccd.host-{host_arch}.compiler-{compiler_arch}',
+                        self.template_path
+                        / "host/build-context/etc/init.d/distccd.jinja",
+                        self.out_path
+                        / "host/build-context/etc/init.d"
+                        / "distccd.host-{host_arch}.compiler-{compiler_arch}",
                     )
                     self.render_template(
-                        self.template_path /
-                        'host/build-context/etc/logrotate.d/distccd.jinja',
-                        self.out_path / 'host/build-context/etc/logrotate.d' /
-                        'distccd.host-{host_arch}.compiler-{compiler_arch}',
+                        self.template_path
+                        / "host/build-context/etc/logrotate.d/distccd.jinja",
+                        self.out_path
+                        / "host/build-context/etc/logrotate.d"
+                        / "distccd.host-{host_arch}.compiler-{compiler_arch}",
                     )
 
 
 class ArchLinuxLike(Distro):
-    template_path = Path('archlinux-like')
+    template_path = Path("archlinux-like")
 
-    host_archs = ('amd64', )
-    compiler_archs = ('amd64', 'arm32v5', 'arm32v6', 'arm32v7', 'arm64v8', )
+    host_archs = ("amd64",)
+    compiler_archs = (
+        "amd64",
+        "arm32v5",
+        "arm32v6",
+        "arm32v7",
+        "arm64v8",
+    )
     compiler_archs_by_host_arch = {
-        'amd64': ('amd64', 'arm32v5', 'arm32v6', 'arm32v7', 'arm64v8', ),
+        "amd64": (
+            "amd64",
+            "arm32v5",
+            "arm32v6",
+            "arm32v7",
+            "arm64v8",
+        ),
     }
     ports_by_arch = {
-        'amd64': 3704,
-        'arm32v5': 3705,
-        'arm32v6': 3706,
-        'arm32v7': 3707,
-        'arm64v8': 3708,
+        "amd64": 3704,
+        "arm32v5": 3705,
+        "arm32v6": 3706,
+        "arm32v7": 3707,
+        "arm64v8": 3708,
     }
     images_by_arch = {
-        'amd64': 'archlinux:20200908',
-        'arm32v5': 'lopsided/archlinux@sha256:66b26a83a39e26e2a390b5b92105f80e6042d0db79ee22b1f57d169307b87a58',
-        'arm32v6': 'lopsided/archlinux@sha256:109729d4d863e14fed6faa1437f0eaee8133b26c310079c8294a4c7db6dbebb5',
-        'arm32v7': 'lopsided/archlinux@sha256:fbf2d806f207a2e9a5400bd20672b80ca318a2e59fc56c1c0f90b4e9adb60f4a',
-        'arm64v8': 'lopsided/archlinux@sha256:f9d68dd73a85b587539e04ef26b18d91b243bee8e1a343ad97f67183f275e548'
+        "amd64": "archlinux:20200908",
+        "arm32v5": "lopsided/archlinux@sha256:66b26a83a39e26e2a390b5b92105f80e6042d0db79ee22b1f57d169307b87a58",
+        "arm32v6": "lopsided/archlinux@sha256:109729d4d863e14fed6faa1437f0eaee8133b26c310079c8294a4c7db6dbebb5",
+        "arm32v7": "lopsided/archlinux@sha256:fbf2d806f207a2e9a5400bd20672b80ca318a2e59fc56c1c0f90b4e9adb60f4a",
+        "arm64v8": "lopsided/archlinux@sha256:f9d68dd73a85b587539e04ef26b18d91b243bee8e1a343ad97f67183f275e548",
     }
     toolchains_by_arch = {
-        'arm32v5': '/toolchains/x-tools/arm-unknown-linux-gnueabi',
-        'arm32v6': '/toolchains/x-tools6h/arm-unknown-linux-gnueabihf',
-        'arm32v7': '/toolchains/x-tools7h/arm-unknown-linux-gnueabihf',
-        'arm64v8': '/toolchains/x-tools8/aarch64-unknown-linux-gnu',
+        "arm32v5": "/toolchains/x-tools/arm-unknown-linux-gnueabi",
+        "arm32v6": "/toolchains/x-tools6h/arm-unknown-linux-gnueabihf",
+        "arm32v7": "/toolchains/x-tools7h/arm-unknown-linux-gnueabihf",
+        "arm64v8": "/toolchains/x-tools8/aarch64-unknown-linux-gnu",
     }
 
     def __init__(self, name):
         super(ArchLinuxLike, self).__init__(name)
-        self.env.filters['image'] = self.images_by_arch.get
+        self.env.filters["image"] = self.images_by_arch.get
 
     def get_compiler_path_part(self, compiler_arch):
-        if self.context['host_arch'] == compiler_arch:
-            return ''
-        return Path(self.toolchains_by_arch[compiler_arch]) / 'bin:'
+        if self.context["host_arch"] == compiler_arch:
+            return ""
+        return Path(self.toolchains_by_arch[compiler_arch]) / "bin:"
 
     def render(self, **context):
         with self.set_context(**context):
@@ -464,115 +583,133 @@ class ArchLinuxLike(Distro):
             for compiler_arch in self.compiler_archs_by_host_arch[host_arch]:
                 with self.set_context(host_arch=host_arch, compiler_arch=compiler_arch):
                     self.render_template(
-                        self.template_path /
-                        'host/build-context/etc/conf.d/distccd.jinja',
-                        self.out_path / 'host/build-context/etc/conf.d' /
-                        'distccd.host-{host_arch}.compiler-{compiler_arch}',
+                        self.template_path
+                        / "host/build-context/etc/conf.d/distccd.jinja",
+                        self.out_path
+                        / "host/build-context/etc/conf.d"
+                        / "distccd.host-{host_arch}.compiler-{compiler_arch}",
                     )
                     self.render_template(
-                        self.template_path /
-                        'host/build-context/usr/lib/systemd/system/distccd.service.jinja',
-                        self.out_path / 'host/build-context/usr/lib/systemd/system' /
-                        'distccd.host-{host_arch}.compiler-{compiler_arch}.service',
+                        self.template_path
+                        / "host/build-context/usr/lib/systemd/system/distccd.service.jinja",
+                        self.out_path
+                        / "host/build-context/usr/lib/systemd/system"
+                        / "distccd.host-{host_arch}.compiler-{compiler_arch}.service",
                     )
 
 
 # Register supported distributions
-debian_buster = DebianLike('debian:buster')
-archlinux = ArchLinuxLike('archlinux')
+debian_buster = DebianLike("debian:buster")
+archlinux = ArchLinuxLike("archlinux")
 
 
 def make_parser():
     parser = argparse.ArgumentParser()
 
-    subparsers = parser.add_subparsers(dest='subcommand')
+    subparsers = parser.add_subparsers(dest="subcommand")
 
     # list-distros
-    subparsers.add_parser('list-distros')
+    subparsers.add_parser("list-distros")
 
     # list-host-archs
-    parser_list_host_archs = subparsers.add_parser('list-host-archs')
-    parser_list_host_archs.add_argument('--distro', type=Distro.get, required=True)
+    parser_list_host_archs = subparsers.add_parser("list-host-archs")
+    parser_list_host_archs.add_argument("--distro", type=Distro.get, required=True)
 
     # list-compiler-archs
-    parser_list_compiler_archs = subparsers.add_parser('list-compiler-archs')
-    parser_list_compiler_archs.add_argument('--distro', type=Distro.get, required=True)
+    parser_list_compiler_archs = subparsers.add_parser("list-compiler-archs")
+    parser_list_compiler_archs.add_argument("--distro", type=Distro.get, required=True)
 
     # render
-    parser_render = subparsers.add_parser('render')
-    parser_render.add_argument('--tag', required=True)
+    parser_render = subparsers.add_parser("render")
+    parser_render.add_argument("--tag", required=True)
 
     # render
-    subparsers.add_parser('render-github-actions')
+    subparsers.add_parser("render-github-actions")
 
     # build-host
-    parser_build_host = subparsers.add_parser('build-host')
-    parser_build_host.add_argument('--distro', type=Distro.get, required=True)
-    parser_build_host.add_argument('--host-arch', required=True)
-    parser_build_host.add_argument('--tag', required=True)
-    parser_build_host.add_argument('--push', action='store_true')
+    parser_build_host = subparsers.add_parser("build-host")
+    parser_build_host.add_argument("--distro", type=Distro.get, required=True)
+    parser_build_host.add_argument("--host-arch", required=True)
+    parser_build_host.add_argument("--tag", required=True)
+    parser_build_host.add_argument("--push", action="store_true")
 
     # build-client
-    parser_build_client = subparsers.add_parser('build-client')
-    parser_build_client.add_argument('--distro', type=Distro.get, required=True)
-    parser_build_client.add_argument('--client-arch', required=True)
-    parser_build_client.add_argument('--tag', required=True)
-    parser_build_client.add_argument('--push', action='store_true')
+    parser_build_client = subparsers.add_parser("build-client")
+    parser_build_client.add_argument("--distro", type=Distro.get, required=True)
+    parser_build_client.add_argument("--client-arch", required=True)
+    parser_build_client.add_argument("--tag", required=True)
+    parser_build_client.add_argument("--push", action="store_true")
 
     # build-all
-    parser_build_all = subparsers.add_parser('build-all')
-    parser_build_all.add_argument('--tag', required=True)
-    parser_build_all.add_argument('--push', action='store_true')
+    parser_build_all = subparsers.add_parser("build-all")
+    parser_build_all.add_argument("--tag", required=True)
+    parser_build_all.add_argument("--push", action="store_true")
 
     # clean
-    subparsers.add_parser('clean')
+    subparsers.add_parser("clean")
 
     # test
-    parser_test = subparsers.add_parser('test')
-    parser_test.add_argument('--distro', type=Distro.get, required=True)
-    parser_test.add_argument('--host-arch', required=True)
-    parser_test.add_argument('--client-arch', required=True)
-    parser_test.add_argument('--tag', required=True)
+    parser_test = subparsers.add_parser("test")
+    parser_test.add_argument("--distro", type=Distro.get, required=True)
+    parser_test.add_argument("--host-arch", required=True)
+    parser_test.add_argument("--client-arch", required=True)
+    parser_test.add_argument("--tag", required=True)
+
+    # push-host-manifest
+    parser_push_host_manifest = subparsers.add_parser("push-host-manifest")
+    parser_push_host_manifest.add_argument("--distro", type=Distro.get, required=True)
+    parser_push_host_manifest.add_argument("--tag", required=True)
+
+    # push-client-manifest
+    parser_push_client_manifest = subparsers.add_parser("push-client-manifest")
+    parser_push_client_manifest.add_argument("--distro", type=Distro.get, required=True)
+    parser_push_client_manifest.add_argument("--tag", required=True)
 
     return parser
 
 
 def main():
     args = make_parser().parse_args()
-    if args.subcommand == 'list-distros':
-        print('\n'.join(Distro.registry.keys()))
+    if args.subcommand == "list-distros":
+        print("\n".join(Distro.registry.keys()))
 
-    elif args.subcommand == 'list-host-archs':
-        print('\n'.join(args.distro.host_archs))
+    elif args.subcommand == "list-host-archs":
+        print("\n".join(args.distro.host_archs))
 
-    elif args.subcommand == 'list-compiler-archs':
-        print('\n'.join(args.distro.compiler_archs))
+    elif args.subcommand == "list-compiler-archs":
+        print("\n".join(args.distro.compiler_archs))
 
-    elif args.subcommand == 'render':
+    elif args.subcommand == "render":
         Distro.render_all(tag=args.tag)
 
-    elif args.subcommand == 'render-github-actions':
+    elif args.subcommand == "render-github-actions":
         for distro in Distro.registry.values():
             distro.render_github_actions()
 
-    elif args.subcommand == 'build-host':
+    elif args.subcommand == "build-host":
         args.distro.build_host(args.host_arch, tag=args.tag, push=args.push)
 
-    elif args.subcommand == 'build-client':
+    elif args.subcommand == "build-client":
         args.distro.build_client(args.client_arch, tag=args.tag, push=args.push)
 
-    elif args.subcommand == 'build-all':
+    elif args.subcommand == "build-all":
         Distro.build_all(tag=args.tag, push=args.push)
 
-    elif args.subcommand == 'clean':
+    elif args.subcommand == "clean":
         Distro.clean_all()
 
-    elif args.subcommand == 'test':
+    elif args.subcommand == "test":
         args.distro.test(args.host_arch, args.client_arch, tag=args.tag)
 
+    elif args.subcommand == "push-host-manifest":
+        args.distro.push_host_manifest(tag=args.tag)
+
+    elif args.subcommand == "push-client-manifest":
+        args.distro.push_client_manifest(tag=args.tag)
+
     else:
-        raise ValueError(f'Unknown subcommand {args.subcommand}')
+        raise ValueError(f"Unknown subcommand {args.subcommand}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

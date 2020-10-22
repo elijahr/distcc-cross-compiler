@@ -14,4 +14,11 @@ do
 		./builder.py render-github-actions
 		git add .github/workflows/*.yml || true
 	fi
+
+	case $file in
+		*.py)
+			black $file
+			git add $file
+			;;
+	esac
 done
