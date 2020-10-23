@@ -1074,7 +1074,8 @@ jobs:
 
   push_manifests:
     name: Push manifests
-
+    if: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
+      }}
 
     runs-on: ubuntu-latest
     needs:
@@ -1131,6 +1132,7 @@ jobs:
     strategy:
       matrix:
         include:
+        - version: latest
         - version: ${{ github.ref }}
 
     steps:
