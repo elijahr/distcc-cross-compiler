@@ -1,7 +1,7 @@
 FROM {{ host_arch|image }}
 
 # Install deps
-RUN pacman -Syu --noconfirm distcc base-devel
+RUN pacman -Syu --noconfirm distcc
 
 # Clear pacman cache
 RUN pacman -Sc --noconfirm

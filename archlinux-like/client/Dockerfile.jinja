@@ -5,7 +5,7 @@ RUN \
   echo ">>> cat /etc/fstab >>>" && cat /etc/fstab && echo "<<< cat /etc/fstab <<<"
 
 # Install deps
-RUN pacman -Syu --noconfirm distcc ccache base-devel
+RUN pacman -Syu --noconfirm distcc ccache
 
 # Clear pacman cache
 RUN pacman -Sc --noconfirm || true
