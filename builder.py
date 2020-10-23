@@ -322,19 +322,6 @@ class Distro(metaclass=abc.ABCMeta):
             docker("pull", image)
         except ErrorReturnCode_1:
             pass
-        from sh import cat, mount, dmesg
-
-        print(">>> cat /etc/fstab >>>")
-        print(cat("/etc/fstab"))
-        print("<<< cat /etc/fstab <<<")
-
-        print(">>> mount >>>")
-        print(mount())
-        print("<<< mount <<<")
-
-        print(">>> dmesg >>>")
-        print(dmesg())
-        print("<<< dmesg <<<")
 
         docker(
             "build",
@@ -566,10 +553,10 @@ class ArchLinuxLike(Distro):
     }
     images_by_arch = {
         "amd64": "archlinux:20200908",
-        "arm32v5": "lopsided/archlinux@sha256:f2e46d0710b7",
-        "arm32v6": "lopsided/archlinux@sha256:a25100d247d7",
-        "arm32v7": "lopsided/archlinux@sha256:b2f694f7a403",
-        "arm64v8": "lopsided/archlinux@sha256:f92f54da7a92",
+        "arm32v5": "lopsided/archlinux@sha256:f2e46d0710b7b22eab7c71b3898004d760f7ba53639cb5384edf160c0c3633d7",
+        "arm32v6": "lopsided/archlinux@sha256:a25100d247d70599c31a6c0d6b0cad5961142c965927988a68fbb657c57b3d41",
+        "arm32v7": "lopsided/archlinux@sha256:b2f694f7a40380b368c0bd52ae40d30043434b04444b97e53df9252f6852fd8c",
+        "arm64v8": "lopsided/archlinux@sha256:f92f54da7a92e28c61e37c301373d53388e8333820638dd7515159b75dd9afe0",
     }
     toolchains_by_arch = {
         "arm32v5": "/toolchains/x-tools/arm-unknown-linux-gnueabi",
