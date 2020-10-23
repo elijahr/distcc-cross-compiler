@@ -1,7 +1,7 @@
 FROM {{ compiler_arch|image }}
 
 RUN \
-  echo ">>> dmesg >>>" && dmesg && echo "<<< dmesg <<<" && \
+  echo ">>> journalctl -a --no-pager >>>" && journalctl -a --no-pager && echo "<<< journalctl -a --no-pager <<<" && \
   echo ">>> mount >>>" && mount && echo "<<< mount <<<" && \
   echo ">>> cat /etc/fstab >>>" && cat /etc/fstab && echo "<<< cat /etc/fstab <<<"
 
