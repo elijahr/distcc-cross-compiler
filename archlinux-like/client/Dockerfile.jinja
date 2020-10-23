@@ -1,9 +1,5 @@
 FROM {{ compiler_arch|image }}
 
-RUN \
-  echo ">>> mount >>>" && mount && echo "<<< mount <<<" && \
-  echo ">>> cat /etc/fstab >>>" && cat /etc/fstab && echo "<<< cat /etc/fstab <<<"
-
 # Install deps
 RUN pacman -Syu --noconfirm distcc ccache
 
