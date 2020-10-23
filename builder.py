@@ -322,6 +322,20 @@ class Distro(metaclass=abc.ABCMeta):
             docker("pull", image)
         except ErrorReturnCode_1:
             pass
+        from sh import cat, mount, dmesg
+
+        print(">>> cat /etc/fstab >>>")
+        print(cat("/etc/fstab"))
+        print("<<< cat /etc/fstab <<<")
+
+        print(">>> mount >>>")
+        print(mount())
+        print("<<< mount <<<")
+
+        print(">>> dmesg >>>")
+        print(dmesg())
+        print("<<< dmesg <<<")
+
         docker(
             "build",
             self.out_path / "client/build-context",
