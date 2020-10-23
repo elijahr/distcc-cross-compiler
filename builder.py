@@ -552,7 +552,7 @@ class ArchLinuxLike(Distro):
         "arm64v8": 3708,
     }
     images_by_arch = {
-        "amd64": "archlinux:20200908",
+        "amd64": "lopsided/archlinux@sha256:cc39ef351ca8eb8656acb176cae8400958bf3ec345b075ea76517d9b4348a53f",
         "arm32v5": "lopsided/archlinux@sha256:405110f7f780c7ee3e2663329ddd0d26e9e602dadf87a30e2b55ebe920848982",
         "arm32v6": "lopsided/archlinux@sha256:f0a2a1b73d11090642f178baa43b5d815dc0163b57c78028eecb5e3f4d89ae05",
         "arm32v7": "lopsided/archlinux@sha256:f0a2a1b73d11090642f178baa43b5d815dc0163b57c78028eecb5e3f4d89ae05",
