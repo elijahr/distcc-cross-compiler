@@ -566,10 +566,10 @@ class ArchLinuxLike(Distro):
     }
     images_by_arch = {
         "amd64": "archlinux:20200908",
-        "arm32v5": "lopsided/archlinux@sha256:66b26a83a39e26e2a390b5b92105f80e6042d0db79ee22b1f57d169307b87a58",
-        "arm32v6": "lopsided/archlinux@sha256:109729d4d863e14fed6faa1437f0eaee8133b26c310079c8294a4c7db6dbebb5",
-        "arm32v7": "lopsided/archlinux@sha256:fbf2d806f207a2e9a5400bd20672b80ca318a2e59fc56c1c0f90b4e9adb60f4a",
-        "arm64v8": "lopsided/archlinux@sha256:f9d68dd73a85b587539e04ef26b18d91b243bee8e1a343ad97f67183f275e548",
+        "arm32v5": "lopsided/archlinux@sha256:f2e46d0710b7",
+        "arm32v6": "lopsided/archlinux@sha256:a25100d247d7",
+        "arm32v7": "lopsided/archlinux@sha256:b2f694f7a403",
+        "arm64v8": "lopsided/archlinux@sha256:f92f54da7a92",
     }
     toolchains_by_arch = {
         "arm32v5": "/toolchains/x-tools/arm-unknown-linux-gnueabi",
