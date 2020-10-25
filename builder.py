@@ -49,7 +49,6 @@ def slugify(string):
 docker_manifest_args = {
     "amd64": ["--arch", "amd64"],
     "i386": ["--arch", "386"],
-    "arm32v5": ["--arch", "arm", "--variant", "v5"],
     "arm32v6": ["--arch", "arm", "--variant", "v6"],
     "arm32v7": ["--arch", "arm", "--variant", "v7"],
     "arm64v8": ["--arch", "arm64", "--variant", "v8"],
@@ -61,7 +60,6 @@ docker_manifest_args = {
 docker_platforms_by_arch = {
     "i386": "linux/386",
     "amd64": "linux/amd64",
-    "arm32v5": "linux/arm/v5",
     "arm32v6": "linux/arm/v6",
     "arm32v7": "linux/arm/v7",
     "arm64v8": "linux/arm64/v8",
@@ -537,7 +535,6 @@ class ArchLinuxLike(Distro):
     host_archs = ("amd64",)
     compiler_archs = (
         "amd64",
-        "arm32v5",
         "arm32v6",
         "arm32v7",
         "arm64v8",
@@ -545,7 +542,6 @@ class ArchLinuxLike(Distro):
     compiler_archs_by_host_arch = {
         "amd64": (
             "amd64",
-            "arm32v5",
             "arm32v6",
             "arm32v7",
             "arm64v8",
@@ -553,13 +549,11 @@ class ArchLinuxLike(Distro):
     }
     ports_by_arch = {
         "amd64": 3704,
-        "arm32v5": 3705,
         "arm32v6": 3706,
         "arm32v7": 3707,
         "arm64v8": 3708,
     }
     toolchains_by_arch = {
-        "arm32v5": "/toolchains/x-tools/arm-unknown-linux-gnueabi",
         "arm32v6": "/toolchains/x-tools6h/arm-unknown-linux-gnueabihf",
         "arm32v7": "/toolchains/x-tools7h/arm-unknown-linux-gnueabihf",
         "arm64v8": "/toolchains/x-tools8/aarch64-unknown-linux-gnu",

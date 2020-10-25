@@ -21,7 +21,6 @@ The `elijahru/distcc-cross-compiler-host-archlinux:latest` image exposes the fol
 | Host arch | Target arch | Compiler port |
 |-----------|-------------|---------------|
 | `amd64`   | `amd64`     | 3704          |
-| `amd64`   | `arm32v5`   | 3705          |
 | `amd64`   | `arm32v6`   | 3706          |
 | `amd64`   | `arm32v7`   | 3707          |
 | `amd64`   | `arm64v8`   | 3708          |
@@ -84,7 +83,6 @@ The client containers also use ccache to avoid repeat compilation. ccached objec
 | Emulated architecture | Client image on Docker Hub                                           | `DISTCC_HOSTS`    |
 |-----------------------|----------------------------------------------------------------------|-------------------|
 | `amd64` (`x86_64`)    | `elijahru/distcc-cross-compiler-client-archlinux:latest-amd64`       | `172.17.0.1:3704` |
-| `arm32v5`             | `elijahru/distcc-cross-compiler-client-archlinux:latest-arm32v5`     | `172.17.0.1:3705` |
 | `arm32v6`             | `elijahru/distcc-cross-compiler-client-archlinux:latest-arm32v6`     | `172.17.0.1:3706` |
 | `arm32v7`             | `elijahru/distcc-cross-compiler-client-archlinux:latest-arm32v7`     | `172.17.0.1:3707` |
 | `arm64v8` (`aarch64`) | `elijahru/distcc-cross-compiler-client-archlinux:latest-arm64v8`     | `172.17.0.1:3708` |
@@ -200,8 +198,6 @@ services:
     ports:
       # amd64
       - 3704:3704
-      # arm32v5
-      - 3705:3705
       # arm32v6
       - 3706:3706
       # arm32v7
@@ -214,13 +210,6 @@ services:
     volumes:
       - .:/code
       - ./caches/amd64/ccache:/root/.ccache
-    command: ./configure && make
-
-  client-arm32v5:
-    image: elijahru/distcc-cross-compiler-client-archlinux:latest-arm32v5
-    volumes:
-      - .:/code
-      - ./caches/arm32v5/ccache:/root/.ccache
     command: ./configure && make
 
   client-arm32v6:
