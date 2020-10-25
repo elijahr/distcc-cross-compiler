@@ -1,9 +1,9 @@
-FROM {{ compiler_arch|image }}
+FROM lopsided/archlinux:devel
 
 # Install deps and clear pacman cache
 RUN \
-  pacman -Syu --noconfirm distcc ccache; \
-  pacman -Sc --noconfirm || true;
+  pacman -Syu --noconfirm distcc ccache && \
+  (pacman -Sc --noconfirm || true)
 
 RUN \
   mkdir -p /scripts && \

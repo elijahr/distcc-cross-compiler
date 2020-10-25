@@ -6,12 +6,18 @@ _anchors:
       fetch-depth: 1
       submodules: recursive
 
-  install_emulation_deps: &install_emulation_deps
-    name: Install emulation dependencies
-    run: |
-      sudo apt-get update -q -y
-      sudo apt-get -qq install -y qemu qemu-user-static
-      docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+  setup_qemu: &setup_qemu
+    name: Set up QEMU
+    uses: docker/setup-qemu-action@v1
+    with:
+      platforms: all
+
+  setup_buildx: &setup_buildx
+    name: Set up Docker Buildx
+    id: buildx
+    uses: docker/setup-buildx-action@v1
+    with:
+      version: latest
 
   install_pip_requirements: &install_pip_requirements
     name: Install pip requirements
@@ -40,7 +46,8 @@ jobs:
 
     steps:
       - *checkout_repo
-      - *install_emulation_deps
+      - *setup_qemu
+      - *setup_buildx
       - *install_pip_requirements
       - *dockerhub_login
       - name: Build host image
@@ -60,7 +67,8 @@ jobs:
 
     steps:
       - *checkout_repo
-      - *install_emulation_deps
+      - *setup_qemu
+      - *setup_buildx
       - *install_pip_requirements
       - *dockerhub_login
       - name: Build client image
@@ -84,7 +92,8 @@ jobs:
 
     steps:
       - *checkout_repo
-      - *install_emulation_deps
+      - *setup_qemu
+      - *setup_buildx
       - *install_pip_requirements
       - name: Run tests
         run: |

@@ -1,9 +1,9 @@
-FROM {{ host_arch|image }}
+FROM lopsided/archlinux:devel
 
 # Install deps and clear pacman cache
 RUN \
-  pacman -Syu --noconfirm distcc; \
-  pacman -Sc --noconfirm || true;
+  pacman -Syu --noconfirm distcc && \
+  (pacman -Sc --noconfirm || true)
 
 # Install pre-built cross-compiler toolchains, as per https://archlinuxarm.org/wiki/Distcc_Cross-Compiling
 COPY toolchains/* /toolchains/

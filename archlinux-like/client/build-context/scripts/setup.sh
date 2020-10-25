@@ -2,6 +2,8 @@
 
 set -uxeo pipefail
 
+pacman -Syu --noconfirm distcc ccache
+
 # ccache and distcc provides gcc/g++ wrappers, but not cc, so create additional symlinks
 if [[ ! -f /usr/lib/distcc/bin/cc ]]
 then

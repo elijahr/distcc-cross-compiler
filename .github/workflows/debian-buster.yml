@@ -20,11 +20,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -55,11 +60,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -90,11 +100,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -125,11 +140,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -160,11 +180,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -195,11 +220,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -232,11 +262,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -267,11 +302,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -302,11 +342,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -337,11 +382,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -372,11 +422,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -407,11 +462,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -448,11 +508,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -481,11 +546,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -514,11 +584,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -547,11 +622,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -580,11 +660,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -613,11 +698,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -648,11 +738,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -681,11 +776,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -714,11 +814,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -747,11 +852,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -782,11 +892,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -817,11 +932,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -850,11 +970,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -883,11 +1008,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -918,11 +1048,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -951,11 +1086,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -984,11 +1124,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -1017,11 +1162,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |
@@ -1052,11 +1202,16 @@ jobs:
         fetch-depth: 1
         submodules: recursive
 
-    - name: Install emulation dependencies
-      run: |
-        sudo apt-get update -q -y
-        sudo apt-get -qq install -y qemu qemu-user-static
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: all
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        version: latest
 
     - name: Install pip requirements
       run: |

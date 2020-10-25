@@ -58,6 +58,18 @@ docker_manifest_args = {
 }
 
 
+docker_platforms_by_arch = {
+    "i386": "linux/386",
+    "amd64": "linux/amd64",
+    "arm32v5": "linux/arm/v5",
+    "arm32v6": "linux/arm/v6",
+    "arm32v7": "linux/arm/v7",
+    "arm64v8": "linux/arm64/v8",
+    "ppc64le": "linux/ppc64le",
+    "s390x": "linux/s390x",
+}
+
+
 def configure_qemu():
     if not which("qemu-aarch64"):
         raise RuntimeError(
@@ -298,7 +310,11 @@ class Distro(metaclass=abc.ABCMeta):
             docker("pull", image)
         except ErrorReturnCode_1:
             pass
+        args = []
+        if push:
+            args.append("--push")
         docker(
+            "buildx",
             "build",
             self.out_path / "host/build-context",
             "--file",
@@ -307,9 +323,10 @@ class Distro(metaclass=abc.ABCMeta):
             image,
             "--cache-from",
             image,
+            "--platform",
+            docker_platforms_by_arch[host_arch],
+            *args,
         )
-        if push:
-            docker("push", image)
 
     def build_client(self, client_arch, tag, push=False):
         configure_qemu()
@@ -322,8 +339,11 @@ class Distro(metaclass=abc.ABCMeta):
             docker("pull", image)
         except ErrorReturnCode_1:
             pass
-
+        args = []
+        if push:
+            args.append("--push")
         docker(
+            "buildx",
             "build",
             self.out_path / "client/build-context",
             "--file",
@@ -332,9 +352,10 @@ class Distro(metaclass=abc.ABCMeta):
             image,
             "--cache-from",
             image,
+            "--platform",
+            docker_platforms_by_arch[client_arch],
+            *args,
         )
-        if push:
-            docker("push", image)
 
     def push_host_manifest(self, manifest_tag, image_tag):
         os.environ["DOCKER_CLI_EXPERIMENTAL"] = "enabled"
@@ -560,23 +581,12 @@ class ArchLinuxLike(Distro):
         "arm32v7": 3707,
         "arm64v8": 3708,
     }
-    images_by_arch = {
-        "amd64": "lopsided/archlinux@sha256:cc39ef351ca8eb8656acb176cae8400958bf3ec345b075ea76517d9b4348a53f",
-        "arm32v5": "lopsided/archlinux@sha256:405110f7f780c7ee3e2663329ddd0d26e9e602dadf87a30e2b55ebe920848982",
-        "arm32v6": "lopsided/archlinux@sha256:f0a2a1b73d11090642f178baa43b5d815dc0163b57c78028eecb5e3f4d89ae05",
-        "arm32v7": "lopsided/archlinux@sha256:f0a2a1b73d11090642f178baa43b5d815dc0163b57c78028eecb5e3f4d89ae05",
-        "arm64v8": "lopsided/archlinux@sha256:405110f7f780c7ee3e2663329ddd0d26e9e602dadf87a30e2b55ebe920848982",
-    }
     toolchains_by_arch = {
         "arm32v5": "/toolchains/x-tools/arm-unknown-linux-gnueabi",
         "arm32v6": "/toolchains/x-tools6h/arm-unknown-linux-gnueabihf",
         "arm32v7": "/toolchains/x-tools7h/arm-unknown-linux-gnueabihf",
         "arm64v8": "/toolchains/x-tools8/aarch64-unknown-linux-gnu",
     }
-
-    def __init__(self, name):
-        super(ArchLinuxLike, self).__init__(name)
-        self.env.filters["image"] = self.images_by_arch.get
 
     def get_compiler_path_part(self, compiler_arch):
         if self.context["host_arch"] == compiler_arch:
