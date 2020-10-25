@@ -70,26 +70,6 @@ docker_platforms_by_arch = {
 }
 
 
-def configure_qemu():
-    return
-    if not which("qemu-aarch64"):
-        raise RuntimeError(
-            "QEMU not installed, install missing package (apt: qemu,qemu-user-static | pacman: qemu-headless,qemu-headless-arch-extra | brew: qemu)."
-        )
-
-    images = docker("images", "--format", "{{ .Repository }}", _out=None, _err=None)
-    if "multiarch/qemu-user-static" not in images:
-        docker(
-            "run",
-            "--rm",
-            "--privileged",
-            "multiarch/qemu-user-static",
-            "--reset",
-            "-p",
-            "yes",
-        )
-
-
 class Distro(metaclass=abc.ABCMeta):
     template_path = None
     registry = {}
@@ -301,8 +281,6 @@ class Distro(metaclass=abc.ABCMeta):
             self.interpolate_yaml(self.github_actions_yml_path)
 
     def build_host(self, host_arch, tag, push=False):
-        configure_qemu()
-
         self.render(tag=tag)
 
         image = f"elijahru/distcc-cross-compiler-host-{slugify(self.name)}:{tag}-{host_arch}"
@@ -330,8 +308,6 @@ class Distro(metaclass=abc.ABCMeta):
         )
 
     def build_client(self, client_arch, tag, push=False):
-        configure_qemu()
-
         self.render(tag=tag)
 
         image = f"elijahru/distcc-cross-compiler-client-{slugify(self.name)}:{tag}-{client_arch}"
