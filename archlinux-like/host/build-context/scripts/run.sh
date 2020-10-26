@@ -4,7 +4,7 @@ set -uxeo pipefail
 
 declare -a pids
 
-archs=( "amd64" "arm32v6" "arm32v7" "arm64v8" )
+archs=( "amd64" "arm32v7" "arm64v8" )
 
 on_sigint () {
   echo "Interrupted..."

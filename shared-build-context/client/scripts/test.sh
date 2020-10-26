@@ -12,11 +12,11 @@ main () {
 
   case $expected_arch in
     amd64) test $arch == x86_64 ;;
-    i386) test $arch == i686 ;;
-    arm32v6|arm32v7) test $arch == arm ;;
+    arm32v7) test $arch == armv7l ;;
     arm64v8) test $arch == aarch64 ;;
-    ppc64le) test $arch == ppc64el ;;
+    ppc64le) test $arch == ppc64le ;;
     s390x) test $arch == s390x ;;
+    *) echo "Unknown arch $expected_arch"; exit 1 ;;
   esac
 
   cd $(dirname $0)
