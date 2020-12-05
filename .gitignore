@@ -1,9 +1,0 @@
-cJSON-master/
-caches
-/.vscode/
-
-/debian-buster/*
-/debian-buster-slim/*
-/archlinux/*
-
-Pipfile*
